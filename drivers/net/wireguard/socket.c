@@ -76,6 +76,12 @@ static int send4(struct wg_device *wg, struct sk_buff *skb,
 			net_dbg_ratelimited("%s: No route to %pISpfsc, error %d\n",
 					    wg->dev->name, &endpoint->addr, ret);
 			goto err;
+		} else if (unlikely(rt->dst.dev == skb->dev)) {
+			ip_rt_put(rt);
+			ret = -ELOOP;
+			net_dbg_ratelimited("%s: Avoiding routing loop to %pISpfsc\n",
+					    wg->dev->name, &endpoint->addr);
+			goto err;
 		}
 		if (cache)
 			dst_cache_set_ip4(cache, &rt->dst, fl.saddr);
@@ -142,6 +148,12 @@ static int send6(struct wg_device *wg, struct sk_buff *skb,
 			ret = PTR_ERR(dst);
 			net_dbg_ratelimited("%s: No route to %pISpfsc, error %d\n",
 					    wg->dev->name, &endpoint->addr, ret);
+			goto err;
+		} else if (unlikely(dst->dev == skb->dev)) {
+			dst_release(dst);
+			ret = -ELOOP;
+			net_dbg_ratelimited("%s: Avoiding routing loop to %pISpfsc\n",
+					    wg->dev->name, &endpoint->addr);
 			goto err;
 		}
 		if (cache)
@@ -321,7 +333,6 @@ static int wg_receive(struct sock *sk, struct sk_buff *skb)
 	wg = sk->sk_user_data;
 	if (unlikely(!wg))
 		goto err;
-	skb_mark_not_on_list(skb);
 	wg_packet_receive(wg, skb);
 	return 0;
 
@@ -347,7 +358,6 @@ static void set_sock_opts(struct socket *sock)
 
 int wg_socket_init(struct wg_device *wg, u16 port)
 {
-	struct net *net;
 	int ret;
 	struct udp_tunnel_sock_cfg cfg = {
 		.sk_user_data = wg,
@@ -372,47 +382,37 @@ int wg_socket_init(struct wg_device *wg, u16 port)
 	};
 #endif
 
-	rcu_read_lock();
-	net = rcu_dereference(wg->creating_net);
-	net = net ? maybe_get_net(net) : NULL;
-	rcu_read_unlock();
-	if (unlikely(!net))
-		return -ENONET;
-
 #if IS_ENABLED(CONFIG_IPV6)
 retry:
 #endif
 
-	ret = udp_sock_create(net, &port4, &new4);
+	ret = udp_sock_create(wg->creating_net, &port4, &new4);
 	if (ret < 0) {
 		pr_err("%s: Could not create IPv4 socket\n", wg->dev->name);
-		goto out;
+		return ret;
 	}
 	set_sock_opts(new4);
-	setup_udp_tunnel_sock(net, new4, &cfg);
+	setup_udp_tunnel_sock(wg->creating_net, new4, &cfg);
 
 #if IS_ENABLED(CONFIG_IPV6)
 	if (ipv6_mod_enabled()) {
 		port6.local_udp_port = inet_sk(new4->sk)->inet_sport;
-		ret = udp_sock_create(net, &port6, &new6);
+		ret = udp_sock_create(wg->creating_net, &port6, &new6);
 		if (ret < 0) {
 			udp_tunnel_sock_release(new4);
 			if (ret == -EADDRINUSE && !port && retries++ < 100)
 				goto retry;
 			pr_err("%s: Could not create IPv6 socket\n",
 			       wg->dev->name);
-			goto out;
+			return ret;
 		}
 		set_sock_opts(new6);
-		setup_udp_tunnel_sock(net, new6, &cfg);
+		setup_udp_tunnel_sock(wg->creating_net, new6, &cfg);
 	}
 #endif
 
 	wg_socket_reinit(wg, new4->sk, new6 ? new6->sk : NULL);
-	ret = 0;
-out:
-	put_net(net);
-	return ret;
+	return 0;
 }
 
 void wg_socket_reinit(struct wg_device *wg, struct sock *new4,
@@ -431,6 +431,7 @@ void wg_socket_reinit(struct wg_device *wg, struct sock *new4,
 		wg->incoming_port = ntohs(inet_sk(new4)->inet_sport);
 	mutex_unlock(&wg->socket_update_lock);
 	synchronize_rcu();
+	synchronize_net();
 	sock_free(old4);
 	sock_free(old6);
 }
