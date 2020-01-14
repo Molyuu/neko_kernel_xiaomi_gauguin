@@ -502,7 +502,7 @@ static int parse_fuse_opt(char *opt, struct fuse_mount_data *d, int is_bdev,
 			if (match_int(&args[0], &value))
 				return 0;
 			d->fd = value;
-			d->fd_present = 1;
+			d->fd_present = true;
 			break;
 
 		case OPT_ROOTMODE:
@@ -511,7 +511,7 @@ static int parse_fuse_opt(char *opt, struct fuse_mount_data *d, int is_bdev,
 			if (!fuse_valid_type(value))
 				return 0;
 			d->rootmode = value;
-			d->rootmode_present = 1;
+			d->rootmode_present = true;
 			break;
 
 		case OPT_USER_ID:
@@ -520,7 +520,7 @@ static int parse_fuse_opt(char *opt, struct fuse_mount_data *d, int is_bdev,
 			d->user_id = make_kuid(user_ns, uv);
 			if (!uid_valid(d->user_id))
 				return 0;
-			d->user_id_present = 1;
+			d->user_id_present = true;
 			break;
 
 		case OPT_GROUP_ID:
@@ -529,15 +529,15 @@ static int parse_fuse_opt(char *opt, struct fuse_mount_data *d, int is_bdev,
 			d->group_id = make_kgid(user_ns, uv);
 			if (!gid_valid(d->group_id))
 				return 0;
-			d->group_id_present = 1;
+			d->group_id_present = true;
 			break;
 
 		case OPT_DEFAULT_PERMISSIONS:
-			d->default_permissions = 1;
+			d->default_permissions = true;
 			break;
 
 		case OPT_ALLOW_OTHER:
-			d->allow_other = 1;
+			d->allow_other = true;
 			break;
 
 		case OPT_MAX_READ:
@@ -1005,7 +1005,7 @@ void fuse_send_init(struct fuse_conn *fc)
 	/* Variable length argument used for backward compatibility
 	   with interface version < 7.5.  Rest of init_out is zeroed
 	   by do_get_request(), so a short reply is not a problem */
-	ia->args.out_argvar = 1;
+	ia->args.out_argvar = true;
 	ia->args.out_args[0].size = sizeof(ia->out);
 	ia->args.out_args[0].value = &ia->out;
 	ia->args.force = true;
