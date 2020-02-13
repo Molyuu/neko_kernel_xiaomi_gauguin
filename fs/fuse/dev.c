@@ -264,7 +264,6 @@ static void flush_bg_queue(struct fuse_conn *fc)
 void fuse_request_end(struct fuse_conn *fc, struct fuse_req *req)
 {
 	struct fuse_iqueue *fiq = &fc->iq;
-	bool async = req->args->end;
 
 	if (test_and_set_bit(FR_FINISHED, &req->flags))
 		goto put_request;
@@ -311,7 +310,7 @@ void fuse_request_end(struct fuse_conn *fc, struct fuse_req *req)
 		wake_up(&req->waitq);
 	}
 
-	if (async)
+	if (test_bit(FR_ASYNC, &req->flags))
 		req->args->end(fc, req->args, req->out.h.error);
 put_request:
 	fuse_put_request(fc, req);
@@ -459,6 +458,8 @@ static void fuse_args_to_req(struct fuse_req *req, struct fuse_args *args)
 	req->in.h.opcode = args->opcode;
 	req->in.h.nodeid = args->nodeid;
 	req->args = args;
+	if (args->end)
+		__set_bit(FR_ASYNC, &req->flags);
 }
 
 ssize_t fuse_simple_request(struct fuse_conn *fc, struct fuse_args *args)
