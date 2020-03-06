@@ -51,6 +51,16 @@
 #include "../xiaomi/xiaomi_touch.h"
 #endif
 
+#if WAKEUP_GESTURE
+#ifdef CONFIG_TOUCHSCREEN_COMMON
+#include <linux/input/tp_common.h>
+#endif
+#endif
+
+#ifdef CONFIG_TOUCHSCREEN_XIAOMI_TOUCHFEATURE
+#include "../xiaomi/xiaomi_touch.h"
+#endif
+
 #if NVT_TOUCH_ESD_PROTECT
 static struct delayed_work nvt_esd_check_work;
 static struct workqueue_struct *nvt_esd_check_wq;
@@ -96,6 +106,33 @@ extern void lpm_disable_for_input(bool on);
 uint32_t ENG_RST_ADDR  = 0x7FFF80;
 uint32_t SWRST_N8_ADDR = 0; /* read from dtsi */
 uint32_t SPI_RD_FAST_ADDR = 0; /* read from dtsi */
+
+#ifdef CONFIG_TOUCHSCREEN_COMMON
+static ssize_t double_tap_show(struct kobject *kobj,
+                               struct kobj_attribute *attr, char *buf)
+{
+    return sprintf(buf, "%d\n", ts->db_wakeup);
+}
+
+static ssize_t double_tap_store(struct kobject *kobj,
+                                struct kobj_attribute *attr, const char *buf,
+                                size_t count)
+{
+    int rc, val;
+
+    rc = kstrtoint(buf, 10, &val);
+    if (rc)
+    return -EINVAL;
+
+    ts->db_wakeup = !!val;
+    return count;
+}
+
+static struct tp_common_ops double_tap_ops = {
+    .show = double_tap_show,
+    .store = double_tap_store
+};
+#endif
 
 #ifdef CONFIG_MTK_SPI
 const struct mt_chip_conf spi_ctrdata = {
@@ -2447,6 +2484,14 @@ static int32_t nvt_ts_probe(struct platform_device *pdev)
 
 #if WAKEUP_GESTURE
 	input_set_capability(ts->input_dev, EV_KEY, KEY_WAKEUP);
+	}
+#ifdef CONFIG_TOUCHSCREEN_COMMON
+    ret = tp_common_set_double_tap_ops(&double_tap_ops);
+    if (ret < 0) {
+        NVT_ERR("%s: Failed to create double_tap node err=%d\n",
+                __func__, ret);
+    }
+#endif
 #endif
 
 	sprintf(ts->phys, "input/ts");
