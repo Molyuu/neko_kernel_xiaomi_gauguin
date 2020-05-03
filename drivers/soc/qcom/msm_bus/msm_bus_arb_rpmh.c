@@ -1577,8 +1577,6 @@ static int update_context(uint32_t cl, bool active_only,
 		goto exit_update_context;
 	}
 
-//	trace_bus_update_request_end(pdata->name);
-
 exit_update_context:
 	rt_mutex_unlock(&msm_bus_adhoc_lock);
 	return ret;
@@ -1640,8 +1638,6 @@ static int update_request_adhoc(uint32_t cl, unsigned int index)
 		goto exit_update_request;
 	}
 
-//	trace_bus_update_request_end(pdata->name);
-
 exit_update_request:
 	rt_mutex_unlock(&msm_bus_adhoc_lock);
 	return ret;
@@ -1697,8 +1693,6 @@ static int query_client_usecase(struct msm_bus_tcs_usecase *tcs_usecase,
 		goto exit_query_client_usecase;
 	}
 
-//	trace_bus_update_request_end(pdata->name);
-
 exit_query_client_usecase:
 	rt_mutex_unlock(&msm_bus_adhoc_lock);
 	return ret;
@@ -1750,8 +1744,6 @@ static int query_client_usecase_all(struct msm_bus_tcs_handle *tcs_handle,
 		pr_err("%s: Err updating path\n", __func__);
 		goto exit_query_client_usecase_all;
 	}
-
-//	trace_bus_update_request_end(pdata->name);
 
 exit_query_client_usecase_all:
 	rt_mutex_unlock(&msm_bus_adhoc_lock);
@@ -1826,7 +1818,6 @@ static int update_bw_adhoc(struct msm_bus_client_handle *cl, u64 ab, u64 ib)
 
 	if (log_transaction)
 		getpath_debug(cl->mas, cl->first_hop, cl->active_only);
-//	trace_bus_update_request_end(cl->name);
 exit_update_request:
 	rt_mutex_unlock(&msm_bus_adhoc_lock);
 
@@ -1871,7 +1862,6 @@ static int update_bw_context(struct msm_bus_client_handle *cl, u64 act_ab,
 	cl->cur_act_ab = act_ab;
 	cl->cur_dual_ib = dual_ib;
 	cl->cur_dual_ab = dual_ab;
-//	trace_bus_update_request_end(cl->name);
 exit_change_context:
 	rt_mutex_unlock(&msm_bus_adhoc_lock);
 	return ret;
