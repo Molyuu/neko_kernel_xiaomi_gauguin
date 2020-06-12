@@ -10,6 +10,11 @@
 #include <linux/uaccess.h>
 #include "ion_secure_util.h"
 #include "ion_system_secure_heap.h"
+#include "compat_ion.h"
+
+#ifdef CONFIG_ION_LEGACY
+#include "ion_legacy.h"
+#endif
 
 struct ion_dma_buf_attachment {
 	struct ion_dma_buf_attachment *next;
@@ -22,7 +27,13 @@ struct ion_dma_buf_attachment {
 static long ion_ioctl(struct file *filp, unsigned int cmd, unsigned long arg);
 static const struct file_operations ion_fops = {
 	.unlocked_ioctl = ion_ioctl,
+#ifdef CONFIG_COMPAT
+#ifdef CONFIG_ION_LEGACY
+	.compat_ioctl = compat_ion_ioctl
+#else
 	.compat_ioctl = ion_ioctl
+#endif
+#endif
 };
 
 static struct ion_device ion_dev = {
@@ -503,6 +514,22 @@ static int ion_alloc_fd(struct ion_allocation_data *a)
 	return fd;
 }
 
+static int ion_old_alloc_fd(struct ion_old_allocation_data *a)
+{
+	struct dma_buf *dmabuf;
+	int fd;
+
+	dmabuf = ion_alloc_dmabuf(a->len, a->heap_id_mask, a->flags);
+	if (IS_ERR(dmabuf))
+		return PTR_ERR(dmabuf);
+
+	fd = dma_buf_fd(dmabuf, O_CLOEXEC);
+	if (fd < 0)
+		dma_buf_put(dmabuf);
+
+	return fd;
+}
+
 void ion_add_heap(struct ion_device *idev, struct ion_heap *heap)
 {
 	struct ion_heap_data *hdata = &idev->heap_data[idev->heap_count];
@@ -565,6 +592,11 @@ static long ion_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
 		struct ion_allocation_data allocation;
 		struct ion_prefetch_data prefetch;
 		struct ion_heap_query query;
+#ifdef CONFIG_ION_LEGACY
+		struct ion_fd_data fd;
+		struct ion_old_allocation_data old_allocation;
+		struct ion_handle_data handle;
+#endif
 	} data;
 	int fd, *output;
 
@@ -620,6 +652,64 @@ static long ion_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
 				      ION_HEAP_TYPE_SYSTEM_SECURE,
 				      &data.prefetch,
 				      ion_system_secure_heap_drain);
+#ifdef CONFIG_ION_LEGACY
+	case ION_OLD_IOC_ALLOC:
+		/* The data used in ion_old_allocation_data ends at `flags` */
+		if (copy_from_user(&data, (void __user *)arg,
+				   offsetof(struct ion_old_allocation_data, flags) +
+				   sizeof(data.old_allocation.flags)))
+			return -EFAULT;
+
+		fd = ion_old_alloc_fd(&data.old_allocation);
+		if (fd < 0)
+			return fd;
+
+		output = &fd;
+		arg += offsetof(struct ion_old_allocation_data, handle);
+		break;
+	case ION_IOC_FREE:
+		/* Only copy the `handle` field */
+		if (copy_from_user(&data.handle.handle,
+				   (void __user *)arg +
+				   offsetof(struct ion_handle_data, handle),
+				   sizeof(data.handle.handle)))
+			return -EFAULT;
+
+		/*
+		 * libion passes 0 as the handle to check for this ioctl's
+		 * existence and expects -ENOTTY on kernel 4.12+ as an indicator
+		 * of having a new ION ABI. We want to use new ION as much as
+		 * possible, so pretend that this ioctl doesn't exist when
+		 * libion checks for it.
+		 */
+		if (!data.handle.handle)
+			return -ENOTTY;
+
+		return 0;
+	case ION_IOC_SHARE:
+	case ION_IOC_MAP:
+		/* Only copy the `handle` field */
+		if (copy_from_user(&data.fd.handle,
+				   (void __user *)arg +
+				   offsetof(struct ion_fd_data, handle),
+				   sizeof(data.fd.handle)))
+			return -EFAULT;
+
+		output = &data.fd.handle;
+		arg += offsetof(struct ion_fd_data, fd);
+		break;
+	case ION_IOC_IMPORT:
+		/* Only copy the `fd` field */
+		if (copy_from_user(&data.fd.fd,
+				   (void __user *)arg +
+				   offsetof(struct ion_fd_data, fd),
+				   sizeof(data.fd.fd)))
+			return -EFAULT;
+
+		output = &data.fd.fd;
+		arg += offsetof(struct ion_fd_data, handle);
+		break;
+#endif
 	default:
 		return -ENOTTY;
 	}
