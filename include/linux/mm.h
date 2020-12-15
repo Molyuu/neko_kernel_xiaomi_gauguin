@@ -2800,6 +2800,7 @@ extern void kernel_poison_pages(struct page *page, int numpages, int enable);
 static inline bool page_poisoning_enabled(void) { return false; }
 static inline void kernel_poison_pages(struct page *page, int numpages,
 					int enable) { }
+static inline void __kernel_poison_pages(struct page *page, int nunmpages) { }
 #endif
 
 #ifdef CONFIG_INIT_ON_ALLOC_DEFAULT_ON
