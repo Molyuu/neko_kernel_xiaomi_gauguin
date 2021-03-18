@@ -19,14 +19,19 @@
 #include <dsp/q6common.h>
 #include <dsp/q6core.h>
 #include <dsp/msm-audio-event-notify.h>
+#include <dsp/apr_elliptic.h>
 #include <ipc/apr_tal.h>
 #include "adsp_err.h"
 #include "q6afecal-hwdep.h"
+#ifdef CONFIG_MSM_CSPL
+#include <dsp/msm-cirrus-playback.h>
+#endif
 
 #define WAKELOCK_TIMEOUT	5000
 #define AFE_CLK_TOKEN	1024
 
 #define SP_V4_NUM_MAX_SPKRS SP_V2_NUM_MAX_SPKRS
+#define MAX_LSM_SESSIONS 8
 
 struct afe_avcs_payload_port_mapping {
 	u16 port_id;
@@ -246,6 +251,7 @@ struct afe_ctl {
 	/* FTM spk params */
 	uint32_t initial_cal;
 	uint32_t v_vali_flag;
+	int lsm_afe_ports[MAX_LSM_SESSIONS];
 };
 
 struct afe_clkinfo_per_port {
@@ -299,6 +305,8 @@ bool afe_close_done[2] = {true, true};
 
 #define SIZEOF_CFG_CMD(y) \
 		(sizeof(struct apr_hdr) + sizeof(u16) + (sizeof(struct y)))
+
+static bool q6afe_is_afe_lsm_port(int port_id);
 
 static void q6afe_unload_avcs_modules(u16 port_id, int index)
 {
@@ -422,6 +430,16 @@ static int afe_get_cal_hw_delay(int32_t path,
 				struct audio_cal_hw_delay_entry *entry);
 static int remap_cal_data(struct cal_block_data *cal_block, int cal_index);
 
+#ifdef CONFIG_MSM_CSPL
+struct afe_cspl_state cspl_afe = {
+	.apr= &this_afe.apr,
+	.status= &this_afe.status,
+	.state= &this_afe.state,
+	.wait= this_afe.wait,
+	.timeout_ms= TIMEOUT_MS,
+};
+EXPORT_SYMBOL(cspl_afe);
+#endif
 int afe_get_spk_initial_cal(void)
 {
 	return this_afe.initial_cal;
@@ -907,6 +925,11 @@ static int32_t afe_callback(struct apr_client_data *data, void *priv)
 		uint32_t param_id;
 		uint32_t param_id_pos = 0;
 
+#ifdef CONFIG_MSM_CSPL
+		if (crus_afe_callback(data->payload, data->payload_size) == 0)
+			return 0;
+#endif
+
 		if (!payload || (data->token >= AFE_MAX_PORTS)) {
 			pr_err("%s: Error: size %d payload %pK token %d\n",
 				__func__, data->payload_size,
@@ -960,6 +983,11 @@ static int32_t afe_callback(struct apr_client_data *data, void *priv)
 		atomic_set(&this_afe.clk_state, 0);
 		atomic_set(&this_afe.clk_status, 0);
 		wake_up(&this_afe.lpass_core_hw_wait);
+	} else if (data->opcode == ULTRASOUND_OPCODE) {
+		if (NULL != data->payload)
+			elliptic_process_apr_payload(data->payload);
+		else
+			pr_err("[EXPORT_SYMBOLLUS]: payload ptr is Invalid");
 	} else if (data->payload_size) {
 		uint32_t *payload;
 		uint16_t port_id = 0;
@@ -1440,6 +1468,20 @@ static int afe_apr_send_clk_pkt(void *data, wait_queue_head_t *wait)
 	return ret;
 }
 
+#ifdef CONFIG_MSM_CSPL
+int afe_apr_send_pkt_crus(void *data, int index, int set)
+{
+	pr_info("[CSPL] %s: index = %d, set=%d, data = %p\n",
+		__func__, index, set, data);
+
+	if (set)
+		return afe_apr_send_pkt(data, &this_afe.wait[index]);
+	else /* get */
+		return afe_apr_send_pkt(data, 0);
+}
+
+EXPORT_SYMBOL(afe_apr_send_pkt_crus);
+#endif
 /* This function shouldn't be called directly. Instead call q6afe_set_params. */
 static int q6afe_set_params_v2(u16 port_id, int index,
 			       struct mem_mapping_hdr *mem_hdr,
@@ -2543,6 +2585,16 @@ static void afe_send_cal_spv4_tx(int port_id)
 
 }
 
+afe_ultrasound_state_t elus_afe = {
+	.ptr_apr= &this_afe.apr,
+	.ptr_status= &this_afe.status,
+	.ptr_state= &this_afe.state,
+	.ptr_wait= this_afe.wait,
+	.ptr_afe_apr_lock= &this_afe.afe_apr_lock,
+	.timeout_ms= TIMEOUT_MS,
+};
+EXPORT_SYMBOL(elus_afe);
+
 static void afe_send_cal_spkr_prot_tx(int port_id)
 {
 	union afe_spkr_prot_config afe_spk_config;
@@ -2954,10 +3006,12 @@ static int afe_send_port_topology_id(u16 port_id)
 	}
 
 	ret = afe_get_cal_topology_id(port_id, &topology_id, AFE_TOPOLOGY_CAL);
-	if (ret < 0) {
-		pr_debug("%s: Check for LSM topology\n", __func__);
-		ret = afe_get_cal_topology_id(port_id, &topology_id,
-					      AFE_LSM_TOPOLOGY_CAL);
+	if (ret < 0 && q6afe_is_afe_lsm_port(port_id)) {
+		if (port_id >= AFE_PORT_ID_VA_CODEC_DMA_TX_0 && port_id <= AFE_PORT_ID_VA_CODEC_DMA_TX_2) {
+			pr_info("%s: Check for LSM topology\n", __func__);
+			ret = afe_get_cal_topology_id(port_id, &topology_id,
+							AFE_LSM_TOPOLOGY_CAL);
+		}
 	}
 	if (ret || !topology_id) {
 		pr_debug("%s: AFE port[%d] get_cal_topology[%d] invalid!\n",
@@ -3327,7 +3381,7 @@ void afe_send_cal(u16 port_id)
 	if (afe_get_port_type(port_id) == MSM_AFE_PORT_TYPE_TX) {
 		afe_send_cal_spkr_prot_tx(port_id);
 		ret = send_afe_cal_type(AFE_COMMON_TX_CAL, port_id);
-		if (ret < 0)
+		if (ret < 0 && q6afe_is_afe_lsm_port(port_id))
 			send_afe_cal_type(AFE_LSM_TX_CAL, port_id);
 	} else if (afe_get_port_type(port_id) == MSM_AFE_PORT_TYPE_RX) {
 		send_afe_cal_type(AFE_COMMON_RX_CAL, port_id);
@@ -5581,6 +5635,11 @@ static int __afe_port_start(u16 port_id, union afe_port_config *afe_config,
 		goto fail_cmd;
 	}
 	ret = afe_send_cmd_port_start(port_id);
+#if CONFIG_MSM_CSPL
+	if (ret == 0)
+		crus_afe_port_start(port_id);
+#endif
+
 
 fail_cmd:
 	mutex_unlock(&this_afe.afe_cmd_lock);
@@ -8449,6 +8508,10 @@ int afe_close(int port_id)
 	if (ret)
 		pr_err("%s: AFE close failed %d\n", __func__, ret);
 
+#if CONFIG_MSM_CSPL
+    crus_afe_port_close(port_id);
+#endif
+
 fail_cmd:
 	if ((q6core_get_avcs_api_version_per_service(
 		APRV2_IDS_SERVICE_ID_ADSP_CORE_V) >= AVCS_API_VERSION_V5)) {
@@ -10609,6 +10672,8 @@ int __init afe_init(void)
 	init_waitqueue_head(&this_afe.wait_wakeup);
 	init_waitqueue_head(&this_afe.lpass_core_hw_wait);
 	init_waitqueue_head(&this_afe.clk_wait);
+	for (i = 0; i < MAX_LSM_SESSIONS; i++)
+		this_afe.lsm_afe_ports[i] = 0xffff;
 	ret = afe_init_cal_data();
 	if (ret)
 		pr_err("%s: could not init cal data! %d\n", __func__, ret);
@@ -10816,3 +10881,30 @@ done:
 	return ret;
 }
 EXPORT_SYMBOL(afe_unvote_lpass_core_hw);
+
+static bool q6afe_is_afe_lsm_port(int port_id)
+{
+	int i = 0;
+
+	for (i = 0; i < MAX_LSM_SESSIONS; i++) {
+		if (port_id == this_afe.lsm_afe_ports[i])
+			return true;
+	}
+	return false;
+}
+
+/**
+ * afe_set_lsm_afe_port_id -
+ *            Update LSM AFE port
+ * idx: LSM port index
+* lsm_port: LSM port id
+*/
+void afe_set_lsm_afe_port_id(int idx, int lsm_port)
+{
+	if (idx < 0 || idx >= MAX_LSM_SESSIONS) {
+		pr_err("%s: %d Invalid lsm port index\n", __func__, idx);
+		return;
+	}
+	this_afe.lsm_afe_ports[idx] = lsm_port;
+}
+EXPORT_SYMBOL(afe_set_lsm_afe_port_id);
