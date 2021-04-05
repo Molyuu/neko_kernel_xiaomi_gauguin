@@ -117,7 +117,7 @@ ifdef CONFIG_WCD9XXX_CODEC_CORE
 	CORE_OBJS += wcd934x/wcd934x-tables.o
 endif
 
-ifneq (,$(filter $(TARGET_PRODUCT), gauguin))
+ifeq ($(CONFIG_ARCH_LITO), y)
 	CDEFINES += -DCONFIG_SND_SOC_FOR_ULTRASOUND_PATH
 endif
 

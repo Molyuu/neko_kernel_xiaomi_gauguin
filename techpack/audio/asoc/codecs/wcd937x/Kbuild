@@ -64,7 +64,7 @@ COMMON_INC :=	-I$(AUDIO_ROOT)/$(COMMON_DIR)
 
 ############ WCD937X ############
 
-ifneq (,$(filter $(TARGET_PRODUCT), gauguin))
+ifeq ($(CONFIG_ARCH_LITO), y)
 	CDEFINES += -DCONFIG_SND_SOC_FOR_ULTRASOUND_PATH
 endif
 
