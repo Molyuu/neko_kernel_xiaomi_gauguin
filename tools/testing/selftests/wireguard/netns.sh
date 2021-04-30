@@ -24,7 +24,7 @@
 set -e
 
 exec 3>&1
-export LANG=C
+export LC_ALL=C
 export WG_HIDE_KEYS=never
 netns0="wg-test-$$-0"
 netns1="wg-test-$$-1"
