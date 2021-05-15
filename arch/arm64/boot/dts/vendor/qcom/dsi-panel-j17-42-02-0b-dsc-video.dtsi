@@ -220,7 +220,6 @@
 	mi,esd-check-interval = <3000>;
 	mi,mdss-panel-idle-time = <1100>;
 	mi,mdss-panel-idle-fps = <50>;
-	mi,mdss-dsi-pan-enable-smart-fps;
 	mi,mdss-dsi-dfps-preferred-fps-index = <2>; /* 60 fps */
 	mi,mdss-dsi-dfps-dec-vfp-list = <20 0 20 0 0 0
 		0 0 0 0 0 0>;
