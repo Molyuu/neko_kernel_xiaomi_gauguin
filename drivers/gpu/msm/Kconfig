@@ -34,3 +34,6 @@ config QCOM_KGSL_CORESIGHT
 	  When enabled, the Adreno GPU is available as a source for Coresight
 	  data. On a6xx targets there are two sources available for the GX and
 	  CX domains respectively. Debug kernels should say 'Y' here.
+
+config QCOM_KGSL_RECLAIM
+	bool "Enable KGSL reclaim support"
