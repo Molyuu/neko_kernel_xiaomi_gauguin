@@ -366,10 +366,6 @@ static int __scm_call2(u32 fn_id, struct scm_desc *desc, bool retry)
 	trace_scm_call_start(x0, desc);
 	do {
 		mutex_lock(&scm_lock);
-
-		if (SCM_SVC_ID(fn_id) == SCM_SVC_LMH)
-			mutex_lock(&scm_lmh_lock);
-
 		desc->ret[0] = desc->ret[1] = desc->ret[2] = 0;
 
 		if (scm_version == SCM_ARMV8_64)
@@ -384,10 +380,6 @@ static int __scm_call2(u32 fn_id, struct scm_desc *desc, bool retry)
 						  desc->args[2], desc->x5,
 						  &desc->ret[0], &desc->ret[1],
 						  &desc->ret[2]);
-
-		if (SCM_SVC_ID(fn_id) == SCM_SVC_LMH)
-			mutex_unlock(&scm_lmh_lock);
-
 		mutex_unlock(&scm_lock);
 		if (!retry)
 			goto out;
