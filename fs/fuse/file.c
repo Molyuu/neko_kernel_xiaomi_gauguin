@@ -1076,7 +1076,7 @@ static ssize_t fuse_send_write(struct fuse_io_args *ia, loff_t pos,
 	return err ?: ia->write.out.size;
 }
 
-bool fuse_write_update_size(struct inode *inode, loff_t pos)
+bool fuse_write_update_attr(struct inode *inode, loff_t pos)
 {
 	struct fuse_conn *fc = get_fuse_conn(inode);
 	struct fuse_inode *fi = get_fuse_inode(inode);
@@ -1272,7 +1272,7 @@ static ssize_t fuse_perform_write(struct kiocb *iocb,
 	} while (!err && iov_iter_count(ii));
 
 	if (res > 0)
-		fuse_write_update_size(inode, pos);
+		fuse_write_update_attr(inode, pos);
 
 	clear_bit(FUSE_I_SIZE_UNSTABLE, &fi->state);
 	fuse_invalidate_attr_mask(inode, FUSE_STATX_MODSIZE);
@@ -1571,7 +1571,7 @@ static ssize_t fuse_direct_write_iter(struct kiocb *iocb, struct iov_iter *from)
 	}
 	fuse_invalidate_attr_mask(inode, FUSE_STATX_MODSIZE);
 	if (res > 0)
-		fuse_write_update_size(inode, iocb->ki_pos);
+		fuse_write_update_attr(inode, iocb->ki_pos);
 	inode_unlock(inode);
 
 	return res;
@@ -3241,7 +3241,7 @@ fuse_direct_IO(struct kiocb *iocb, struct iov_iter *iter)
 
 	if (iov_iter_rw(iter) == WRITE) {
 		if (ret > 0)
-			fuse_write_update_size(inode, pos);
+			fuse_write_update_attr(inode, pos);
 		else if (ret < 0 && offset + count > i_size)
 			fuse_do_truncate(file);
 	}
@@ -3321,7 +3321,7 @@ static long fuse_file_fallocate(struct file *file, int mode, loff_t offset,
 
 	/* we could have extended the file */
 	if (!(mode & FALLOC_FL_KEEP_SIZE)) {
-		bool changed = fuse_write_update_size(inode, offset + length);
+		bool changed = fuse_write_update_attr(inode, offset + length);
 
 		if (changed && fc->writeback_cache)
 			file_update_time(file);
@@ -3428,7 +3428,7 @@ static ssize_t fuse_copy_file_range(struct file *file_in, loff_t pos_in,
 				   ALIGN(pos_out + outarg.size, PAGE_SIZE) - 1);
 
 	if (fc->writeback_cache) {
-		fuse_write_update_size(inode_out, pos_out + outarg.size);
+		fuse_write_update_attr(inode_out, pos_out + outarg.size);
 		file_update_time(file_out);
 	}
 
