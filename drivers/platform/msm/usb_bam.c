@@ -296,7 +296,7 @@ static struct {
 	char buf[DBG_MAX_MSG][DBG_MSG_LEN];   /* buffer */
 	unsigned int idx;   /* index */
 	rwlock_t lck;   /* lock */
-} __maybe_unused usb_bam_dbg = {
+} __maybe_unused usb_bam_dbg __maybe_unused = {
 	.idx = 0,
 	.lck = __RW_LOCK_UNLOCKED(lck)
 };
@@ -2740,7 +2740,7 @@ int usb_bam_disconnect_ipa(enum usb_ctrl cur_bam,
 	u8 idx = 0;
 	struct usb_bam_ctx_type *ctx = &msm_usb_bam[cur_bam];
 	struct usb_bam_pipe_connect *pipe_connect;
-	struct device *bam_dev = &ctx->usb_bam_pdev->dev;
+	struct device *bam_dev __maybe_unused = &ctx->usb_bam_pdev->dev;
 	enum usb_bam_mode bam_mode;
 
 	if (!is_ipa_handle_valid(ipa_params->prod_clnt_hdl) &&
