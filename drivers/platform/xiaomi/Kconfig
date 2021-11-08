@@ -1,0 +1,24 @@
+# Xiaomi configuration options
+
+config MACH_XIAOMI
+	bool "Xiaomi device"
+	depends on ARCH_QCOM
+	help
+	  Support for Xiaomi products
+
+config MACH_XIAOMI_SM7225
+	bool "Xiaomi SM7225"
+	depends on ARCH_QCOM
+	select MACH_XIAOMI
+	help
+	  Support for Xiaomi SM7225 devices
+
+menu "Xiaomi board selection"
+
+	config MACH_XIAOMI_GAUGUIN
+		bool "Xiaomi Mi 10T Lite/ Xiaomi Mi 10i 5G/ Redmi Note 9 Pro 5G board"
+		select MACH_XIAOMI_SM7225
+		help
+		  Support for Xiaomi Mi 10T Lite/ Xiaomi Mi 10i 5G/ Redmi Note 9 Pro 5G Series
+
+endmenu
