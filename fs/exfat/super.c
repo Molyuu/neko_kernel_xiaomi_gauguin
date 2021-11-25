@@ -22,6 +22,7 @@
 #include <linux/fs_struct.h>
 #include <linux/nls.h>
 #include <linux/buffer_head.h>
+#include <linux/magic.h>
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 16, 0)
 #include <linux/iversion.h>

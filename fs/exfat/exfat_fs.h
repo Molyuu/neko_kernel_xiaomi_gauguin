@@ -13,7 +13,6 @@
 
 #define EXFAT_VERSION		"5.19.1"
 
-#define EXFAT_SUPER_MAGIC       0x2011BAB0UL
 #define EXFAT_ROOT_INO		1
 
 #define EXFAT_CLUSTERS_UNTRACKED (~0u)
