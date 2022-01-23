@@ -103,7 +103,9 @@ struct pl_data {
 	int			main_fcc_max;
 	enum power_supply_type	charger_type;
 	/* debugfs directory */
+#ifdef CONFIG_DEBUG_FS
 	struct dentry		*dfs_root;
+#endif
 	u32			float_voltage_uv;
 };
 
@@ -118,7 +120,9 @@ enum {
 	FORCE_INOV_DISABLE_BIT	= BIT(1),
 };
 
+#ifdef CONFIG_DEBUG_FS
 static int debug_mask;
+#endif
 
 #define pl_dbg(chip, reason, fmt, ...)				\
 	do {								\
@@ -1963,6 +1967,7 @@ static void pl_config_init(struct pl_data *chip, int smb_version)
 	}
 }
 
+#ifdef CONFIG_DEBUG_FS
 static void qcom_batt_create_debugfs(struct pl_data *chip)
 {
 	struct dentry *entry;
@@ -1980,6 +1985,7 @@ static void qcom_batt_create_debugfs(struct pl_data *chip)
 		pr_err("Couldn't create force_dc_psy_update file rc=%ld\n",
 			(long)entry);
 }
+#endif
 
 #define DEFAULT_RESTRICTED_CURRENT_UA	1000000
 int qcom_batt_init(struct charger_param *chg_param)
@@ -2002,7 +2008,9 @@ int qcom_batt_init(struct charger_param *chg_param)
 	if (!chip)
 		return -ENOMEM;
 
+#ifdef CONFIG_DEBUG_FS
 	qcom_batt_create_debugfs(chip);
+#endif
 
 	chip->slave_pct = 50;
 	chip->chg_param = chg_param;
