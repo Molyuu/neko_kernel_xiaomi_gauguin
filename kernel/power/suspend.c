@@ -585,9 +585,9 @@ static int enter_state(suspend_state_t state)
 
 #ifndef CONFIG_SUSPEND_SKIP_SYNC
 	trace_suspend_resume(TPS("sync_filesystems"), 0, true);
-	pr_info("Syncing filesystems ... ");
+	pr_debug("Syncing filesystems ... ");
 	ksys_sync();
-	pr_cont("done.\n");
+	pr_debug("done.\n");
 	trace_suspend_resume(TPS("sync_filesystems"), 0, false);
 #endif
 
@@ -629,7 +629,7 @@ int pm_suspend(suspend_state_t state)
 	if (state <= PM_SUSPEND_ON || state >= PM_SUSPEND_MAX)
 		return -EINVAL;
 
-	pr_info("suspend entry (%s)\n", mem_sleep_labels[state]);
+	pr_debug("suspend entry (%s)\n", mem_sleep_labels[state]);
 	error = enter_state(state);
 	if (error) {
 		suspend_stats.fail++;
@@ -637,7 +637,7 @@ int pm_suspend(suspend_state_t state)
 	} else {
 		suspend_stats.success++;
 	}
-	pr_info("suspend exit\n");
+	pr_debug("suspend exit\n");
 	return error;
 }
 EXPORT_SYMBOL(pm_suspend);
