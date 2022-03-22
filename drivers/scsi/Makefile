@@ -162,7 +162,8 @@ scsi_mod-$(CONFIG_SCSI_NETLINK)	+= scsi_netlink.o
 scsi_mod-$(CONFIG_SYSCTL)	+= scsi_sysctl.o
 scsi_mod-$(CONFIG_SCSI_PROC_FS)	+= scsi_proc.o
 scsi_mod-$(CONFIG_BLK_DEBUG_FS)	+= scsi_debugfs.o
-scsi_mod-$(CONFIG_DEBUG_KERNEL)	+= scsi_trace.o scsi_logging.o
+scsi_mod-$(CONFIG_DEBUG_KERNEL)	+= scsi_logging.o
+scsi_mod-$(CONFIG_TRACING)	+= scsi_trace.o
 scsi_mod-$(CONFIG_PM)		+= scsi_pm.o
 scsi_mod-$(CONFIG_SCSI_DH)	+= scsi_dh.o
 
