@@ -493,7 +493,6 @@ static int _sde_encoder_phys_cmd_handle_ppdone_timeout(
 	struct drm_connector *conn;
 	int event;
 	u32 pending_kickoff_cnt;
-	unsigned long lock_flags;
 
 	if (!phys_enc || !phys_enc->hw_pp || !phys_enc->hw_ctl)
 		return -EINVAL;
@@ -511,10 +510,6 @@ static int _sde_encoder_phys_cmd_handle_ppdone_timeout(
 			cmd_enc->pp_timeout_report_cnt,
 			pending_kickoff_cnt,
 			frame_event);
-
-	/* check if panel is still sending TE signal or not */
-	if (sde_connector_esd_status(phys_enc->connector))
-		goto exit;
 
 	/* to avoid flooding, only log first time, and "dead" time */
 	if (cmd_enc->pp_timeout_report_cnt == 1) {
@@ -548,14 +543,6 @@ static int _sde_encoder_phys_cmd_handle_ppdone_timeout(
 
 	/* request a ctl reset before the next kickoff */
 	phys_enc->enable_state = SDE_ENC_ERR_NEEDS_HW_RESET;
-
-exit:
-	if (phys_enc->parent_ops.handle_frame_done) {
-		spin_lock_irqsave(phys_enc->enc_spinlock, lock_flags);
-		phys_enc->parent_ops.handle_frame_done(
-				phys_enc->parent, phys_enc, frame_event);
-		spin_unlock_irqrestore(phys_enc->enc_spinlock, lock_flags);
-	}
 
 	return -ETIMEDOUT;
 }

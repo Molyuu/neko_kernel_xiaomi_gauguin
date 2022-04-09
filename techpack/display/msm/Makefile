@@ -68,6 +68,8 @@ msm_drm-$(CONFIG_DRM_MSM_SDE) += sde/sde_crtc.o \
 	sde/sde_hw_ds.o \
 	sde/sde_fence.o \
 	sde/sde_hw_qdss.o \
+	xiaomi_frame_stat.o \
+	xiaomi_frame_debug.o \
 
 msm_drm-$(CONFIG_DEBUG_FS) += sde_dbg.o \
 	sde_dbg_evtlog.o \
@@ -100,6 +102,8 @@ msm_drm-$(CONFIG_DRM_MSM_DSI) += dsi/dsi_phy.o \
 	dsi/dsi_panel.o \
 	dsi/dsi_clk_manager.o \
 	dsi/dsi_display_test.o \
+	dsi/dsi_display_mi.o \
+	dsi/dsi_panel_mi.o \
 
 msm_drm-$(CONFIG_DSI_PARSER) += dsi/dsi_parser.o \
 

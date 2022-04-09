@@ -944,7 +944,6 @@ static int dsi_ctrl_update_link_freqs(struct dsi_ctrl *dsi_ctrl,
 		bit_rate = h_period * v_period * timing->refresh_rate * bpp;
 	}
 
-
 	pclk_rate = bit_rate;
 	do_div(pclk_rate, bpp);
 	if (host_cfg->phy_type == DSI_PHY_TYPE_DPHY) {

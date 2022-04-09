@@ -3133,8 +3133,8 @@ static void _sde_encoder_input_handler_register(
 	struct sde_encoder_virt *sde_enc = to_sde_encoder_virt(drm_enc);
 	int rc;
 
-	if (!sde_encoder_check_curr_mode(drm_enc, MSM_DISPLAY_CMD_MODE))
-		return;
+	//if (!sde_encoder_check_curr_mode(drm_enc, MSM_DISPLAY_CMD_MODE))
+	//	return;
 
 	if (sde_enc->input_handler && !sde_enc->input_handler->private) {
 		sde_enc->input_handler->private = sde_enc;
@@ -3154,8 +3154,8 @@ static void _sde_encoder_input_handler_unregister(
 {
 	struct sde_encoder_virt *sde_enc = to_sde_encoder_virt(drm_enc);
 
-	if (!sde_encoder_check_curr_mode(drm_enc, MSM_DISPLAY_CMD_MODE))
-		return;
+	//if (!sde_encoder_check_curr_mode(drm_enc, MSM_DISPLAY_CMD_MODE))
+	//	return;
 
 	if (sde_enc->input_handler && sde_enc->input_handler->private) {
 		input_unregister_handler(sde_enc->input_handler);
@@ -3688,6 +3688,7 @@ static void sde_encoder_underrun_callback(struct drm_encoder *drm_enc,
 		atomic_read(&phy_enc->underrun_cnt));
 
 	SDE_DBG_CTRL("stop_ftrace");
+	SDE_ERROR("underrun: %d\n", atomic_read(&phy_enc->underrun_cnt));
 	SDE_DBG_CTRL("panic_underrun");
 
 	SDE_ATRACE_END("encoder_underrun_callback");
@@ -4343,11 +4344,15 @@ static void _sde_encoder_setup_dither(struct sde_encoder_phys *phys)
 	void *dither_cfg;
 	int ret = 0, i = 0;
 	size_t len = 0;
+	bool dither_enable  = false;
 	enum sde_rm_topology_name topology;
 	struct drm_encoder *drm_enc;
 	struct msm_display_dsc_info *dsc = NULL;
 	struct sde_encoder_virt *sde_enc;
 	struct sde_hw_pingpong *hw_pp;
+
+	if(!dither_enable)
+		return;
 
 	if (!phys || !phys->connector || !phys->hw_pp ||
 			!phys->hw_pp->ops.setup_dither || !phys->parent)
@@ -4496,18 +4501,25 @@ static void sde_encoder_esd_trigger_work_handler(struct kthread_work *work)
 			SDE_ENC_RC_EVENT_KICKOFF);
 }
 
+extern void sde_crtc_touch_notify(void);
 static void sde_encoder_input_event_work_handler(struct kthread_work *work)
 {
 	struct sde_encoder_virt *sde_enc = container_of(work,
 				struct sde_encoder_virt, input_event_work);
+	struct drm_encoder *drm_enc;
 
 	if (!sde_enc) {
 		SDE_ERROR("invalid sde encoder\n");
 		return;
 	}
 
-	sde_encoder_resource_control(&sde_enc->base,
-			SDE_ENC_RC_EVENT_EARLY_WAKEUP);
+	drm_enc = &sde_enc->base;
+	if (sde_encoder_check_curr_mode(drm_enc, MSM_DISPLAY_CMD_MODE)) {
+		sde_encoder_resource_control(&sde_enc->base,
+				SDE_ENC_RC_EVENT_EARLY_WAKEUP);
+	} else {
+		sde_crtc_touch_notify();
+	}
 }
 
 static void sde_encoder_vsync_event_work_handler(struct kthread_work *work)
@@ -5682,7 +5694,8 @@ struct drm_encoder *sde_encoder_init_with_ops(
 		sde_enc->rsc_client = NULL;
 	}
 
-	if (disp_info->capabilities & MSM_DISPLAY_CAP_CMD_MODE) {
+	if (disp_info->capabilities & MSM_DISPLAY_CAP_CMD_MODE ||
+			disp_info->capabilities & MSM_DISPLAY_CAP_VID_MODE) {
 		ret = _sde_encoder_input_handler(sde_enc);
 		if (ret)
 			SDE_ERROR(
