@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
  * Copyright (c) 2017-2020, The Linux Foundation. All rights reserved.
+ * Copyright (C) 2021 XiaoMi, Inc.
  */
 
 #include "cam_csiphy_dev.h"
@@ -50,26 +51,6 @@ static long cam_csiphy_subdev_ioctl(struct v4l2_subdev *sd,
 	return rc;
 }
 
-
-static int cam_csiphy_subdev_open(struct v4l2_subdev *sd,
-	struct v4l2_subdev_fh *fh)
-{
-	struct csiphy_device *csiphy_dev =
-		v4l2_get_subdevdata(sd);
-
-	if (!csiphy_dev) {
-		CAM_ERR(CAM_CSIPHY, "csiphy_dev ptr is NULL");
-		return -EINVAL;
-	}
-
-	mutex_lock(&csiphy_dev->mutex);
-	csiphy_dev->open_cnt++;
-	CAM_DBG(CAM_CSIPHY, "csiphy_dev open count %d", csiphy_dev->open_cnt);
-	mutex_unlock(&csiphy_dev->mutex);
-
-	return 0;
-}
-
 static int cam_csiphy_subdev_close(struct v4l2_subdev *sd,
 	struct v4l2_subdev_fh *fh)
 {
@@ -82,14 +63,7 @@ static int cam_csiphy_subdev_close(struct v4l2_subdev *sd,
 	}
 
 	mutex_lock(&csiphy_dev->mutex);
-	if (csiphy_dev->open_cnt <= 0) {
-		mutex_unlock(&csiphy_dev->mutex);
-		return -EINVAL;
-	}
-	csiphy_dev->open_cnt--;
-	CAM_DBG(CAM_CSIPHY, "csiphy_dev open count %d", csiphy_dev->open_cnt);
-	if (csiphy_dev->open_cnt == 0)
-		cam_csiphy_shutdown(csiphy_dev);
+	cam_csiphy_shutdown(csiphy_dev);
 	mutex_unlock(&csiphy_dev->mutex);
 
 	return 0;
@@ -147,7 +121,6 @@ static const struct v4l2_subdev_ops csiphy_subdev_ops = {
 };
 
 static const struct v4l2_subdev_internal_ops csiphy_subdev_intern_ops = {
-	.open  = cam_csiphy_subdev_open,
 	.close = cam_csiphy_subdev_close,
 };
 
@@ -156,7 +129,6 @@ static int32_t cam_csiphy_platform_probe(struct platform_device *pdev)
 	struct cam_cpas_register_params cpas_parms;
 	struct csiphy_device *new_csiphy_dev;
 	int32_t              rc = 0;
-	int i;
 
 	new_csiphy_dev = devm_kzalloc(&pdev->dev,
 		sizeof(struct csiphy_device), GFP_KERNEL);
@@ -209,25 +181,18 @@ static int32_t cam_csiphy_platform_probe(struct platform_device *pdev)
 
 	platform_set_drvdata(pdev, &(new_csiphy_dev->v4l2_dev_str.sd));
 
-	for (i = 0; i < CSIPHY_MAX_INSTANCES_PER_PHY; i++) {
-		new_csiphy_dev->csiphy_info[i].hdl_data.device_hdl = -1;
-		new_csiphy_dev->csiphy_info[i].hdl_data.session_hdl = -1;
-		new_csiphy_dev->csiphy_info[i].csiphy_3phase = -1;
-		new_csiphy_dev->csiphy_info[i].data_rate = 0;
-		new_csiphy_dev->csiphy_info[i].settle_time = 0;
-		new_csiphy_dev->csiphy_info[i].lane_cnt = 0;
-		new_csiphy_dev->csiphy_info[i].lane_assign = 0;
-		new_csiphy_dev->csiphy_info[i].lane_enable = 0;
-		new_csiphy_dev->csiphy_info[i].mipi_flags = 0;
-	}
-
-	new_csiphy_dev->ops.get_dev_info = NULL;
-	new_csiphy_dev->ops.link_setup = NULL;
-	new_csiphy_dev->ops.apply_req = NULL;
+	new_csiphy_dev->bridge_intf.device_hdl[0] = -1;
+	new_csiphy_dev->bridge_intf.device_hdl[1] = -1;
+	new_csiphy_dev->bridge_intf.ops.get_dev_info =
+		NULL;
+	new_csiphy_dev->bridge_intf.ops.link_setup =
+		NULL;
+	new_csiphy_dev->bridge_intf.ops.apply_req =
+		NULL;
 
 	new_csiphy_dev->acquire_count = 0;
 	new_csiphy_dev->start_dev_count = 0;
-	new_csiphy_dev->open_cnt = 0;
+	new_csiphy_dev->is_acquired_dev_combo_mode = 0;
 
 	cpas_parms.cam_cpas_client_cb = NULL;
 	cpas_parms.cell_index = new_csiphy_dev->soc_info.index;

@@ -1,6 +1,7 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 /*
  * Copyright (c) 2017-2020, The Linux Foundation. All rights reserved.
+ * Copyright (C) 2021 XiaoMi, Inc.
  */
 
 #ifndef _CAM_CSIPHY_SOC_H_
@@ -30,7 +31,6 @@
 #define CSIPHY_VERSION_V11                        0x11
 #define CSIPHY_VERSION_V12                        0x12
 #define CSIPHY_VERSION_V121                       0x121
-#define CSIPHY_VERSION_V123                       0x123
 #define CSIPHY_VERSION_V20                        0x20
 
 /**
@@ -54,7 +54,7 @@ int cam_csiphy_parse_dt_info(struct platform_device *pdev,
  *
  * This API enables SOC related parameters
  */
-int cam_csiphy_enable_hw(struct csiphy_device *csiphy_dev, int32_t index);
+int cam_csiphy_enable_hw(struct csiphy_device *csiphy_dev);
 
 /**
  * @csiphy_dev: CSIPhy device structure

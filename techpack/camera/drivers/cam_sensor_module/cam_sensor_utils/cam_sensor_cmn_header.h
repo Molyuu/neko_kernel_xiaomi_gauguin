@@ -1,6 +1,7 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 /*
  * Copyright (c) 2017-2020, The Linux Foundation. All rights reserved.
+ * Copyright (C) 2021 XiaoMi, Inc.
  */
 
 #ifndef _CAM_SENSOR_CMN_HEADER_
@@ -142,6 +143,7 @@ enum msm_camera_power_seq_type {
 	SENSOR_STANDBY,
 	SENSOR_CUSTOM_GPIO1,
 	SENSOR_CUSTOM_GPIO2,
+	SENSOR_VREG_LDO,                 //cuixiaojie@xiaomi.com add ncp163 1.95v-2v 2020-09-07
 	SENSOR_SEQ_TYPE_MAX,
 };
 
@@ -385,6 +387,7 @@ enum msm_camera_vreg_name_t {
 	CAM_VAF,
 	CAM_V_CUSTOM1,
 	CAM_V_CUSTOM2,
+	VREG_LDO,                  //cuixiaojie@xiaomi.com add ncp163 1.95v-2v 2020-09-07
 	CAM_VREG_MAX,
 };
 

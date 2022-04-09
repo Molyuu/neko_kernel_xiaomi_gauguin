@@ -1,6 +1,7 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 /*
  * Copyright (c) 2015-2020, The Linux Foundation. All rights reserved.
+ * Copyright (C) 2021 XiaoMi, Inc.
  */
 
 #ifndef _CAM_SOC_UTIL_H_
@@ -30,7 +31,7 @@
 #define CAM_SOC_MAX_BASE            CAM_SOC_MAX_BLOCK
 
 /* maximum number of device regulator */
-#define CAM_SOC_MAX_REGULATOR       5
+#define CAM_SOC_MAX_REGULATOR      7       //cuixiaojie@xiaomi.com add ncp163 1.95v-2v 2020-09-07
 
 /* maximum number of device clock */
 #define CAM_SOC_MAX_CLK             32

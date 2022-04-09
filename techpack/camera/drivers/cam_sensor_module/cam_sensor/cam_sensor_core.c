@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
  * Copyright (c) 2017-2020, The Linux Foundation. All rights reserved.
+ * Copyright (C) 2021 XiaoMi, Inc.
  */
 
 #include <linux/module.h>
@@ -131,7 +132,7 @@ static int32_t cam_sensor_i2c_pkt_parse(struct cam_sensor_ctrl_t *s_ctrl,
 	csl_packet = (struct cam_packet *)(generic_ptr +
 		(uint32_t)config.offset);
 
-	if ((csl_packet == NULL) || cam_packet_util_validate_packet(csl_packet,
+	if (cam_packet_util_validate_packet(csl_packet,
 		remain_len)) {
 		CAM_ERR(CAM_SENSOR, "Invalid packet params");
 		rc = -EINVAL;
@@ -691,14 +692,11 @@ int cam_sensor_match_id(struct cam_sensor_ctrl_t *s_ctrl)
 			 slave_info);
 		return -EINVAL;
 	}
-
 	rc = camera_io_dev_read(
 		&(s_ctrl->io_master_info),
 		slave_info->sensor_id_reg_addr,
-		&chipid,
-		s_ctrl->sensor_probe_addr_type,
+		&chipid,s_ctrl->sensor_probe_addr_type,
 		s_ctrl->sensor_probe_data_type);
-
 	CAM_DBG(CAM_SENSOR, "read id: 0x%x expected id 0x%x:",
 		chipid, slave_info->sensor_id);
 
@@ -710,6 +708,7 @@ int cam_sensor_match_id(struct cam_sensor_ctrl_t *s_ctrl)
 	return rc;
 }
 
+uint32_t g_operation_mode = 0;	//Add For Potrait
 int32_t cam_sensor_driver_cmd(struct cam_sensor_ctrl_t *s_ctrl,
 	void *arg)
 {
@@ -858,6 +857,7 @@ int32_t cam_sensor_driver_cmd(struct cam_sensor_ctrl_t *s_ctrl,
 			goto release_mutex;
 		}
 
+		g_operation_mode = sensor_acq_dev.operation_mode;	//Add For Potrait
 		rc = cam_sensor_power_up(s_ctrl);
 		if (rc < 0) {
 			CAM_ERR(CAM_SENSOR, "Sensor Power up failed");
@@ -1126,6 +1126,16 @@ int cam_sensor_publish_dev_info(struct cam_req_mgr_device_info *info)
 	else
 		info->p_delay = 2;
 	info->trigger = CAM_TRIGGER_POINT_SOF;
+
+	//Add For Potrait and faceunlock start
+	if (g_operation_mode == 0x8002){
+		info->p_delay = 1;
+		CAM_DBG(CAM_SENSOR, "operation mode :%d delay info is 1", g_operation_mode);
+	}else if(g_operation_mode==0x8006){
+		info->p_delay = 0;
+		CAM_DBG(CAM_SENSOR, "operation mode :%d delay info is 0", g_operation_mode);
+	}
+	//Add For Potrait and faceunlock end
 
 	return rc;
 }

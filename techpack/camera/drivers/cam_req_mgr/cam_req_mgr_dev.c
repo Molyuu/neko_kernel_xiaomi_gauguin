@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
  * Copyright (c) 2016-2020, The Linux Foundation. All rights reserved.
+ * Copyright (C) 2021 XiaoMi, Inc.
  */
 
 #include <linux/module.h>
@@ -25,7 +26,7 @@
 #include "cam_debug_util.h"
 #include "cam_common_util.h"
 
-#define CAM_REQ_MGR_EVENT_MAX 30
+#define CAM_REQ_MGR_EVENT_MAX 60
 
 static struct cam_req_mgr_device g_dev;
 struct kmem_cache *g_cam_req_mgr_timer_cachep;
@@ -651,6 +652,7 @@ void cam_subdev_notify_message(u32 subdev_type,
 	struct cam_subdev *csd = NULL;
 
 	list_for_each_entry(sd, &g_dev.v4l2_dev->subdevs, list) {
+		sd->entity.name = video_device_node_name(sd->devnode);
 		if (sd->entity.function == subdev_type) {
 			csd = container_of(sd, struct cam_subdev, sd);
 			if (csd->msg_cb != NULL)
