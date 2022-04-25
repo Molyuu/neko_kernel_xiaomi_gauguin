@@ -96,8 +96,36 @@ static int erofs_map_blocks_flatmode(struct inode *inode,
 			  "internal error @ nid: %llu (size %llu), m_la 0x%llx",
 			  vi->nid, inode->i_size, map->m_la);
 		DBG_BUGON(1);
-		err = -EIO;
-		goto err_out;
+		return -EIO;
+	}
+	return 0;
+}
+
+int erofs_map_blocks(struct inode *inode,
+		     struct erofs_map_blocks *map, int flags)
+{
+	struct super_block *sb = inode->i_sb;
+	struct erofs_inode *vi = EROFS_I(inode);
+	struct erofs_inode_chunk_index *idx;
+	struct erofs_buf buf = __EROFS_BUF_INITIALIZER;
+	u64 chunknr;
+	unsigned int unit;
+	erofs_off_t pos;
+	void *kaddr;
+	int err = 0;
+
+	trace_erofs_map_blocks_enter(inode, map, flags);
+	map->m_deviceid = 0;
+	if (map->m_la >= inode->i_size) {
+		/* leave out-of-bound access unmapped */
+		map->m_flags = 0;
+		map->m_plen = 0;
+		goto out;
+	}
+
+	if (vi->datalayout != EROFS_INODE_CHUNK_BASED) {
+		err = erofs_map_blocks_flatmode(inode, map, flags);
+		goto out;
 	}
 
 out:

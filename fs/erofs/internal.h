@@ -340,6 +340,18 @@ static inline int z_erofs_map_blocks_iter(struct inode *inode,
 
 /* data.c */
 struct page *erofs_get_meta_page(struct super_block *sb, erofs_blk_t blkaddr);
+extern const struct file_operations erofs_file_fops;
+void erofs_unmap_metabuf(struct erofs_buf *buf);
+void erofs_put_metabuf(struct erofs_buf *buf);
+void *erofs_bread(struct erofs_buf *buf, struct inode *inode,
+		  erofs_blk_t blkaddr, enum erofs_kmap_type type);
+void *erofs_read_metabuf(struct erofs_buf *buf, struct super_block *sb,
+			 erofs_blk_t blkaddr, enum erofs_kmap_type type);
+int erofs_map_dev(struct super_block *sb, struct erofs_map_dev *dev);
+int erofs_fiemap(struct inode *inode, struct fiemap_extent_info *fieinfo,
+		 u64 start, u64 len);
+int erofs_map_blocks(struct inode *inode,
+		     struct erofs_map_blocks *map, int flags);
 
 /* inode.c */
 static inline unsigned long erofs_inode_hash(erofs_nid_t nid)
