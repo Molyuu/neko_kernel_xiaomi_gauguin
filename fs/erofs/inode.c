@@ -7,13 +7,8 @@
 
 #include <trace/events/erofs.h>
 
-/*
- * if inode is successfully read, return its inode page (or sometimes
- * the inode payload page if it's an extended inode) in order to fill
- * inline data if possible.
- */
-static struct page *erofs_read_inode(struct inode *inode,
-				     unsigned int *ofs)
+static void *erofs_read_inode(struct erofs_buf *buf,
+			      struct inode *inode, unsigned int *ofs)
 {
 	struct super_block *sb = inode->i_sb;
 	struct erofs_sb_info *sbi = EROFS_SB(sb);
