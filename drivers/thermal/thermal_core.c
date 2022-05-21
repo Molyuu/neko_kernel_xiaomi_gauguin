@@ -275,7 +275,7 @@ int thermal_build_list_of_policies(char *buf)
 	return count;
 }
 
-static void __init thermal_unregister_governors(void)
+static void thermal_unregister_governors(void)
 {
 	struct thermal_governor **governor;
 
