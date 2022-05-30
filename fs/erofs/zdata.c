@@ -222,9 +222,9 @@ struct z_erofs_decompress_frontend {
 	erofs_off_t headoffset;
 };
 
-#define COLLECTOR_INIT() { \
-	.owned_head = Z_EROFS_PCLUSTER_TAIL, \
-	.mode = COLLECT_PRIMARY_FOLLOWED }
+#define DECOMPRESS_FRONTEND_INIT(__i) { \
+	.inode = __i, .owned_head = Z_EROFS_PCLUSTER_TAIL, \
+	.mode = COLLECT_PRIMARY_FOLLOWED, .backmost = true }
 
 #define DECOMPRESS_FRONTEND_INIT(__i) { \
 	.inode = __i, .clt = COLLECTOR_INIT(), \
