@@ -87,6 +87,10 @@ struct wcd937x_priv {
 	struct snd_info_entry *variant_entry;
 	int ear_rx_path;
 	int ana_clk_count;
+#ifdef CONFIG_SND_SOC_FOR_ULTRASOUND_PATH
+	int share_adc_count;
+	int share_adc_req_count;
+#endif
 	struct mutex ana_tx_clk_lock;
 	bool usbc_hs_status;
 	u32 tx_ch_pwr[MAX_TX_PWR_CH];

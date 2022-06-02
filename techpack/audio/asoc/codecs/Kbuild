@@ -117,6 +117,10 @@ ifdef CONFIG_WCD9XXX_CODEC_CORE
 	CORE_OBJS += wcd934x/wcd934x-tables.o
 endif
 
+ifneq (,$(filter $(TARGET_PRODUCT), gauguin))
+	CDEFINES += -DCONFIG_SND_SOC_FOR_ULTRASOUND_PATH
+endif
+
 ifdef CONFIG_WCD9XXX_CODEC_CORE_V2
 	CORE_OBJS += wcd9xxx-core-init.o
 	CORE_OBJS += msm-cdc-pinctrl.o
@@ -234,6 +238,7 @@ ifeq ($(KERNEL_BUILD), 1)
 	obj-y	+= rouleur/
 	obj-y	+= wsa883x/
 	obj-y	+= sdm660_cdc/
+	obj-y	+= cs35l41/
 endif
 # Module information used by KBuild framework
 obj-$(CONFIG_WCD9XXX_CODEC_CORE) += wcd_core_dlkm.o
