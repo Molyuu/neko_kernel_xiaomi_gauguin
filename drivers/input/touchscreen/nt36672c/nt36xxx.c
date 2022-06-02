@@ -29,7 +29,7 @@
 #include <linux/of_gpio.h>
 #include <linux/of_irq.h>
 #include <linux/debugfs.h>
-#include "../spi-xiaomi-tp.h"
+#include "../../../misc/spi-xiaomi-tp.h"
 #include <drm/drm_notifier_mi.h>
 #include <linux/init.h>
 
