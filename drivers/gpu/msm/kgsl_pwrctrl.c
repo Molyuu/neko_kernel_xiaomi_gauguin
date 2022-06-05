@@ -1057,6 +1057,8 @@ static ssize_t __timer_store(struct device *dev, struct device_attribute *attr,
 	unsigned int val = 0;
 	struct kgsl_device *device = dev_get_drvdata(dev);
 	int ret;
+	
+	return count;
 
 	ret = kgsl_sysfs_store(buf, &val);
 	if (ret)
