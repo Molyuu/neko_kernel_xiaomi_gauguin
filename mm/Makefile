@@ -29,6 +29,9 @@ mmu-$(CONFIG_MMU)	:= gup.o memory.o mincore.o \
 
 mmu-$(CONFIG_HIGHMEM)	+= highmem.o
 
+ifdef CONFIG_MM_EVENT_STAT
+mmu-$(CONFIG_MMU)	+= mm_event.o
+endif
 ifdef CONFIG_CROSS_MEMORY_ATTACH
 mmu-$(CONFIG_MMU)	+= process_vm_access.o
 endif

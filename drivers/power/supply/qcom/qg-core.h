@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0 */
 /*
- * Copyright (c) 2018-2020 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2018-2021 The Linux Foundation. All rights reserved.
  * Copyright (C) 2021 XiaoMi, Inc.
  */
 
@@ -158,6 +158,7 @@ struct qpnp_qg {
 	bool			shutdown_delay;
 	bool			last_shutdown_delay;
 	bool			shutdown_delay_cancel;
+	bool			first_profile_load;
 	int			charge_status;
 	int			charge_type;
 	int			chg_iterm_ma;
@@ -177,6 +178,7 @@ struct qpnp_qg {
 	int			bsoc_bass_entry;
 	int			qg_v_ibat;
         int                     fake_temp;
+	int			qg_charge_counter;
 	u32			fifo_done_count;
 	u32			wa_flags;
 	u32			seq_no;
