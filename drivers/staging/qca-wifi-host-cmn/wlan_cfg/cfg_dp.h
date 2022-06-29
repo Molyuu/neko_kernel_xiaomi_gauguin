@@ -578,6 +578,22 @@
 	CFG_INI_BOOL("LROEnable", WLAN_LRO_ENABLE, \
 	"DP LRO Enable")
 
+/*
+ * <ini>
+ * CFG_DP_SG - Enable the SG feature standalonely
+ * @Min: 0
+ * @Max: 1
+ * @Default: 1
+ *
+ * This ini entry is used to enable/disable SG feature standalonely.
+ * Also does Rome support SG on TX, lithium does not.
+ * For example the lithium does not support SG on UDP frames.
+ * Which is able to handle SG only for TSO frames(in case TSO is enabled).
+ *
+ * Usage: External
+ *
+ * </ini>
+ */
 #define CFG_DP_SG \
 	CFG_INI_BOOL("dp_sg_support", false, \
 	"DP SG Enable")
@@ -926,6 +942,43 @@
 	CFG_INI_BOOL("legacy_mode_csum_disable", false, \
 		     "Enable/Disable legacy mode checksum")
 
+/*
+ * <ini>
+ * wow_check_rx_pending_enable - control to check RX frames pending in Wow
+ * @Min: 0
+ * @Max: 1
+ * @Default: 0
+ *
+ * This ini is used to control DP Software to perform RX pending check
+ * before entering WoW mode
+ *
+ * Usage: Internal
+ *
+ * </ini>
+ */
+#define CFG_DP_WOW_CHECK_RX_PENDING \
+		CFG_INI_BOOL("wow_check_rx_pending_enable", \
+		false, \
+		"enable rx frame pending check in WoW mode")
+
+/*
+ * <ini>
+ * gForceRX64BA - enable force 64 blockack mode for RX
+ * @Min: 0
+ * @Max: 1
+ * @Default: 0
+ *
+ * This ini is used to control DP Software to use 64 blockack
+ * for RX direction forcibly
+ *
+ * Usage: Internal
+ *
+ * </ini>
+ */
+#define CFG_FORCE_RX_64_BA \
+		CFG_INI_BOOL("gForceRX64BA", \
+		false, "Enable/Disable force 64 blockack in RX side")
+
 #define CFG_DP \
 		CFG(CFG_DP_HTT_PACKET_TYPE) \
 		CFG(CFG_DP_INT_BATCH_THRESHOLD_OTHER) \
@@ -1003,6 +1056,7 @@
 		CFG(CFG_DP_RX_FISA_ENABLE) \
 		CFG(CFG_DP_LEGACY_MODE_CSUM_DISABLE) \
 		CFG(CFG_DP_RX_PENDING_HL_THRESHOLD) \
-		CFG(CFG_DP_RX_PENDING_LO_THRESHOLD)
-
+		CFG(CFG_DP_RX_PENDING_LO_THRESHOLD) \
+		CFG(CFG_DP_WOW_CHECK_RX_PENDING) \
+		CFG(CFG_FORCE_RX_64_BA)
 #endif /* _CFG_DP_H_ */
