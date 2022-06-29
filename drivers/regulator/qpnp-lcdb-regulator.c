@@ -2097,12 +2097,7 @@ static void qpnp_lcdb_pmic_config(struct qpnp_lcdb *lcdb)
 		if (lcdb->pmic_rev_id->rev4 < PM660L_V2P0_REV4)
 			lcdb->wa_flags |= NCP_SCP_DISABLE_WA;
 		break;
-	case PMI632_SUBTYPE:
-		lcdb->wa_flags |= FORCE_PD_ENABLE_WA;
-		break;
-	case PM8150L_SUBTYPE:
-		if (lcdb->pmic_rev_id->rev4 >= PM8150L_V3P0_REV4)
-			lcdb->voltage_step_ramp = false;
+	case PM6150L_SUBTYPE:
 		lcdb->wa_flags |= FORCE_PD_ENABLE_WA;
 		if (lcdb->pmic_rev_id->rev4 < PM8150L_V3P0_REV4)
 			lcdb->voltage_step_ramp = true;
@@ -2118,6 +2113,7 @@ static void qpnp_lcdb_pmic_config(struct qpnp_lcdb *lcdb)
 
 	pr_debug("LCDB wa_flags = 0x%2x\n", lcdb->wa_flags);
 }
+
 
 static int qpnp_lcdb_hw_init(struct qpnp_lcdb *lcdb)
 {
