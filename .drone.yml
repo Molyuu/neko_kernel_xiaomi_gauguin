@@ -1,17 +1,15 @@
-clone :
-   depth : 1
+clone:
+  depth: 1
 kind: pipeline
-name : Nexus
+name : NexusKernel
 steps:
  - name: Gauguin
-   image: panchajanya1999/archlinux:latest
+   image: nexgang/ubuntu:latest
    environment:
      token:
        from_secret: token
      chat_id:
        from_secret: chat_id
    commands:
-      - curl -fsSL "https://pkgbuild.com/~morganamilo/pacman-static/x86_64/bin/pacman-static" -o pacman-static && chmod +x pacman-static && mv pacman-static /usr/bin/
-      - wget http://archive.ubuntu.com/ubuntu/pool/main/n/ncurses/libtinfo6_6.2+20201114-2build1_amd64.deb -O libtinfo6.deb && dpkg-deb -R libtinfo6.deb libtinfo && cp libtinfo/lib/x86_64-linux-gnu/libtinfo.so.6.2 /usr/lib/libtinfo.so.6
-      - pacman-static -Syu --needed --noconfirm wget unzip dpkg
-      - bash build.sh --neutron
+      - /noclone3 bash build.sh
+      
