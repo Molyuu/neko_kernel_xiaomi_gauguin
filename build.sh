@@ -36,7 +36,7 @@ DATE=$(TZ=Asia/Kolkata date +"%Y%m%d-%T")
 TANGGAL=$(date +"%F%S")
 
 # Compiler and Build Information
-TOOLCHAIN=atomx # List ( gcc = eva | nexus9 | nexus12 ) (clang = nexus | aosp | sdclang | proton | atomx )
+TOOLCHAIN=nexus # List ( gcc = eva | nexus9 | nexus12 ) (clang = nexus | aosp | sdclang | proton | atomx )
 LINKER=ld.lld # List ( ld.lld | ld.bfd | ld.gold | ld )
 
 if [[ "$TOOLCHAIN" == "eva" || "$TOOLCHAIN" == "nexus9" || "$TOOLCHAIN" == "nexus12" ]]; then
