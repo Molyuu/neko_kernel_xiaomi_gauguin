@@ -105,6 +105,7 @@ struct npu_regulator {
 	char regulator_name[NPU_MAX_DT_NAME_LEN];
 };
 
+#ifdef CONFIG_DEBUG_FS
 struct npu_debugfs_ctx {
 	struct dentry *root;
 	uint32_t reg_off;
@@ -122,6 +123,7 @@ struct npu_debugfs_reg_ctx {
 	size_t buf_len;
 	struct npu_device *npu_dev;
 };
+#endif
 
 struct npu_mbox {
 	struct mbox_client client;
@@ -275,8 +277,9 @@ struct npu_device {
 
 	struct npu_host_ctx host_ctx;
 	struct npu_smmu_ctx smmu_ctx;
+#ifdef CONFIG_DEBUG_FS
 	struct npu_debugfs_ctx debugfs_ctx;
-
+#endif
 	struct npu_mbox *mbox_aop;
 	struct npu_mbox mbox[NPU_MAX_MBOX_NUM];
 	struct mbox_bridge_data mbox_bridge_data;
@@ -312,8 +315,14 @@ struct ipcc_mbox_chan {
  * Function Prototypes
  * -------------------------------------------------------------------------
  */
+
+#ifdef CONFIG_DEBUG_FS
 int npu_debugfs_init(struct npu_device *npu_dev);
 void npu_debugfs_deinit(struct npu_device *npu_dev);
+#else
+static inline int npu_debugfs_init(struct npu_device *npu_dev) { return 0; }
+static inline void npu_debugfs_deinit(struct npu_device *npu_dev) { }
+#endif
 
 int npu_enable_core_power(struct npu_device *npu_dev);
 void npu_disable_core_power(struct npu_device *npu_dev);
