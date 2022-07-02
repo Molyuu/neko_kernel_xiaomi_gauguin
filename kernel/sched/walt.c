@@ -3469,7 +3469,7 @@ void walt_irq_work(struct irq_work *irq_work)
 		if ((sched_ravg_window != new_sched_ravg_window) &&
 		    (wc < this_rq()->window_start + new_sched_ravg_window)) {
 			sched_ravg_window_change_time = sched_ktime_clock();
-			printk_deferred("ALERT: changing window size from %u to %u at %lu\n",
+			pr_info_once("ALERT: changing window size from %u to %u at %lu\n",
 					sched_ravg_window,
 					new_sched_ravg_window,
 					sched_ravg_window_change_time);
