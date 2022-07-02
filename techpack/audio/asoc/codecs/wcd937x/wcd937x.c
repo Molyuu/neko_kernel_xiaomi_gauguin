@@ -2641,7 +2641,7 @@ static int wcd937x_soc_codec_probe(struct snd_soc_component *component)
 	int variant;
 	int ret = -EINVAL;
 
-	dev_info(component->dev, "%s()\n", __func__);
+	dev_dbg(component->dev, "%s()\n", __func__);
 	wcd937x = snd_soc_component_get_drvdata(component);
 
 	if (!wcd937x)
@@ -2882,7 +2882,7 @@ static void wcd937x_dt_parse_micbias_info(struct device *dev,
 		if (!rc)
 			mb->micb1_mv = prop_val;
 	} else {
-		dev_info(dev, "%s: Micbias1 DT property not found\n",
+		dev_dbg(dev, "%s: Micbias1 DT property not found\n",
 			__func__);
 	}
 
@@ -2895,7 +2895,7 @@ static void wcd937x_dt_parse_micbias_info(struct device *dev,
 		if (!rc)
 			mb->micb2_mv = prop_val;
 	} else {
-		dev_info(dev, "%s: Micbias2 DT property not found\n",
+		dev_dbg(dev, "%s: Micbias2 DT property not found\n",
 			__func__);
 	}
 
@@ -2908,7 +2908,7 @@ static void wcd937x_dt_parse_micbias_info(struct device *dev,
 		if (!rc)
 			mb->micb3_mv = prop_val;
 	} else {
-		dev_info(dev, "%s: Micbias3 DT property not found\n",
+		dev_dbg(dev, "%s: Micbias3 DT property not found\n",
 			__func__);
 	}
 }
