@@ -355,7 +355,7 @@ int dsi_panel_trigger_esd_attack(struct dsi_panel *panel)
 	if (gpio_is_valid(r_config->reset_gpio)) {
 		gpio_set_value(r_config->reset_gpio, 0);
 		SDE_EVT32(SDE_EVTLOG_FUNC_CASE1);
-		DSI_INFO("GPIO pulled low to simulate ESD\n");
+		DSI_DEBUG("GPIO pulled low to simulate ESD\n");
 		return 0;
 	}
 	DSI_ERR("failed to pull down gpio\n");
@@ -559,7 +559,7 @@ static int dsi_panel_power_off(struct dsi_panel *panel)
 
 	/* Ensure the time interval between LCDB power off and on meets the specification. */
 	if (panel->mi_cfg.post_off_msleep > 0) {
-		pr_info("Sleep after power off: %d ms", panel->mi_cfg.post_off_msleep);
+		pr_debug("Sleep after power off: %d ms", panel->mi_cfg.post_off_msleep);
 		msleep(panel->mi_cfg.post_off_msleep);
 	}
 
@@ -784,22 +784,22 @@ int dsi_panel_set_backlight(struct dsi_panel *panel, u32 bl_lvl)
 	/* stash bl so the bl can be reset rightlly when skipped*/
 	panel->mi_cfg.bl_last_level_unsetted = bl_lvl;
 
-	DSI_INFO("backlight type:%d lvl:%d\n", bl->type, bl_lvl);
+	DSI_DEBUG("backlight type:%d lvl:%d\n", bl->type, bl_lvl);
 
 	if (dc_skip_set_backlight(panel, bl_lvl)) {
-		DSI_INFO("skip set backlight bacase dc enable %d, bl %d\n", panel->mi_cfg.dc_enable, bl_lvl);
+		DSI_DEBUG("skip set backlight bacase dc enable %d, bl %d\n", panel->mi_cfg.dc_enable, bl_lvl);
 		return rc;
 	}
 
 	/* skip set backlight during hbm */
 	if(mi_cfg->fod_hbm_enabled) {
-		DSI_INFO(" skip set backlight during HBM %d, bl %d\n",
+		DSI_DEBUG(" skip set backlight during HBM %d, bl %d\n",
 				mi_cfg->fod_hbm_enabled, bl_lvl);
 		return rc;
 	}
 
 	if(mi_cfg->in_aod) {
-		DSI_INFO(" skip set backlight during aod %d, bl %d\n",
+		DSI_DEBUG(" skip set backlight during aod %d, bl %d\n",
 				mi_cfg->in_aod, bl_lvl);
 		return rc;
 	}
@@ -831,11 +831,11 @@ int dsi_panel_set_backlight(struct dsi_panel *panel, u32 bl_lvl)
 	}
 
 	if (bl_lvl > 0 && mi_cfg->bl_last_level == 0 && mi_cfg->dc_type) {
-		DSI_INFO("crc off\n");
+		DSI_DEBUG("crc off\n");
 		rc = dsi_panel_tx_cmd_set(panel, DSI_CMD_SET_MI_CRC_OFF);
 	}
 	if (bl_lvl == 0 && mi_cfg->dc_type) {
-		DSI_INFO("DC off\n");
+		DSI_DEBUG("DC off\n");
 		mi_cfg->dc_enable = false;
 	}
 	mi_cfg->bl_last_level = bl_lvl;
@@ -1615,7 +1615,7 @@ static int dsi_panel_parse_dfps_caps(struct dsi_panel *panel)
 		rc = utils->read_u32(utils->data, "mi,mdss-dsi-dfps-preferred-fps-index",
 				&dfps_caps->preferred_fps_idx);
 		if (rc) {
-			DSI_INFO("[%s] failed to parse prefered fps index, use default value\n", name);
+			DSI_DEBUG("[%s] failed to parse prefered fps index, use default value\n", name);
 			dfps_caps->preferred_fps_idx = 0;
 		}
 	}
@@ -3049,7 +3049,7 @@ static int dsi_panel_parse_topology(
 	}
 
 	if (topology_override >= 0 && topology_override < top_count) {
-		DSI_INFO("override topology: cfg:%d lm:%d comp_enc:%d intf:%d\n",
+		DSI_DEBUG("override topology: cfg:%d lm:%d comp_enc:%d intf:%d\n",
 			topology_override,
 			topology[topology_override].num_lm,
 			topology[topology_override].num_enc,
@@ -3072,7 +3072,7 @@ static int dsi_panel_parse_topology(
 		goto parse_fail;
 	}
 
-	DSI_INFO("default topology: lm: %d comp_enc:%d intf: %d\n",
+	DSI_DEBUG("default topology: lm: %d comp_enc:%d intf: %d\n",
 		topology[top_sel].num_lm,
 		topology[top_sel].num_enc,
 		topology[top_sel].num_intf);
@@ -3123,7 +3123,7 @@ static int dsi_panel_parse_roi_alignment(struct dsi_parser_utils *utils,
 			align->min_height = value[5];
 		}
 
-		DSI_INFO("roi alignment: [%d, %d, %d, %d, %d, %d]\n",
+		DSI_DEBUG("roi alignment: [%d, %d, %d, %d, %d, %d]\n",
 			align->xstart_pix_align,
 			align->width_pix_align,
 			align->ystart_pix_align,
@@ -3159,7 +3159,7 @@ static int dsi_panel_parse_partial_update_caps(struct dsi_display_mode *mode,
 		else if (!strcmp(data, "single_roi"))
 			roi_caps->num_roi = 1;
 		else {
-			DSI_INFO(
+			DSI_DEBUG(
 			"invalid value for qcom,partial-update-enabled: %s\n",
 			data);
 			return 0;
@@ -4020,7 +4020,7 @@ void dsi_panel_printf_andorid_time(const char *msg)
 	struct rtc_time tm;
 	getnstimeofday(&ts);
 	rtc_time_to_tm(ts.tv_sec, &tm);
-	DSI_INFO("%s: systime:[%d-%02d-%02d %02d:%02d:%02d.%02lu]",msg,tm.tm_year + 1900,
+	DSI_DEBUG("%s: systime:[%d-%02d-%02d %02d:%02d:%02d.%02lu]",msg,tm.tm_year + 1900,
 		tm.tm_mon + 1, tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec, ts.tv_nsec);
 }
 
@@ -4120,7 +4120,7 @@ int dsi_panel_get_mode(struct dsi_panel *panel,
 			if (rc) {
 				rc = 0;
 				mode->panel_mode = panel->panel_mode;
-				DSI_INFO(
+				DSI_DEBUG(
 				"POMS: panel mode isn't specified in timing[%d]\n",
 				child_idx);
 			}
@@ -4285,7 +4285,7 @@ int dsi_panel_set_lp1(struct dsi_panel *panel)
 
 exit:
 	mutex_unlock(&panel->panel_lock);
-	DSI_INFO("[%s] --------- DSI_CMD_SET_LP1\n", panel->name);
+	DSI_DEBUG("[%s] --------- DSI_CMD_SET_LP1\n", panel->name);
 	return rc;
 }
 
@@ -4314,7 +4314,7 @@ int dsi_panel_set_lp2(struct dsi_panel *panel)
 
 exit:
 	mutex_unlock(&panel->panel_lock);
-	DSI_INFO("[%s] --------- DSI_CMD_SET_LP2\n", panel->name);
+	DSI_DEBUG("[%s] --------- DSI_CMD_SET_LP2\n", panel->name);
 	return rc;
 }
 
@@ -4332,7 +4332,7 @@ int dsi_panel_set_nolp(struct dsi_panel *panel)
 	}
 
 	if (mi_cfg->fod_hbm_enabled) {
-		DSI_INFO("fod_hbm_enabled set, skip\n");
+		DSI_DEBUG("fod_hbm_enabled set, skip\n");
 		return 0;
 	}
 
@@ -4673,7 +4673,7 @@ int dsi_panel_switch(struct dsi_panel *panel)
 		       panel->name, rc);
 
 	mutex_unlock(&panel->panel_lock);
-	DSI_INFO("[%s] --------- DSI_CMD_SET_TIMING_SWITCH\n", panel->name);
+	DSI_DEBUG("[%s] --------- DSI_CMD_SET_TIMING_SWITCH\n", panel->name);
 	return rc;
 }
 
@@ -4844,7 +4844,7 @@ int dsi_panel_disable(struct dsi_panel *panel)
 		}
 	}  else {
 		mi_cfg->unset_doze_brightness = mi_cfg->doze_brightness_state;
-		DSI_INFO("save doze brightness state [%d] when ESD recovery is underway\n",
+		DSI_DEBUG("save doze brightness state [%d] when ESD recovery is underway\n",
 				mi_cfg->unset_doze_brightness);
 	}
 	panel->panel_initialized = false;

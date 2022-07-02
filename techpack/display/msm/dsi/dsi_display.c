@@ -1087,7 +1087,7 @@ int dsi_display_set_power(struct drm_connector *connector,
 	notify_data.data = &power_mode;
 	notify_data.id = MSM_DRM_PRIMARY_DISPLAY;
 
-	DSI_INFO("power_mode = %s\n", sde_power_mode_str[power_mode]);
+	DSI_DEBUG("power_mode = %s\n", sde_power_mode_str[power_mode]);
 
 	switch (power_mode) {
 	case SDE_MODE_DPMS_LP1:
@@ -1393,7 +1393,7 @@ static ssize_t debugfs_esd_trigger_check(struct file *file,
 	display->esd_trigger = esd_trigger;
 
 	if (display->esd_trigger) {
-		DSI_INFO("ESD attack triggered by user\n");
+		DSI_DEBUG("ESD attack triggered by user\n");
 		rc = dsi_panel_trigger_esd_attack(display->panel);
 		if (rc) {
 			DSI_ERR("Failed to trigger ESD attack\n");
@@ -1452,16 +1452,16 @@ static ssize_t debugfs_alter_esd_check_mode(struct file *file,
 
 	if (!strcmp(buf, "te_signal_check\n")) {
 		if (display->panel->panel_mode == DSI_OP_VIDEO_MODE) {
-			DSI_INFO("TE based ESD check for Video Mode panels is not allowed\n");
+			DSI_DEBUG("TE based ESD check for Video Mode panels is not allowed\n");
 			goto error;
 		}
-		DSI_INFO("ESD check is switched to TE mode by user\n");
+		DSI_DEBUG("ESD check is switched to TE mode by user\n");
 		esd_config->status_mode = ESD_MODE_PANEL_TE;
 		dsi_display_change_te_irq_status(display, true);
 	}
 
 	if (!strcmp(buf, "reg_read\n")) {
-		DSI_INFO("ESD check is switched to reg read by user\n");
+		DSI_DEBUG("ESD check is switched to reg read by user\n");
 		rc = dsi_panel_parse_esd_reg_read_configs(display->panel);
 		if (rc) {
 			DSI_ERR("failed to alter esd check mode,rc=%d\n",
@@ -4288,7 +4288,7 @@ static int _dsi_display_dyn_update_clks(struct dsi_display *display,
 			DSI_ERR("wait4dynamic refresh failed for dsi:%d\n", i);
 			goto recover_pix_clk;
 		} else {
-			DSI_INFO("dynamic refresh done on dsi: %s\n",
+			DSI_DEBUG("dynamic refresh done on dsi: %s\n",
 				i ? "slave" : "master");
 		}
 	}
@@ -4414,7 +4414,7 @@ static int dsi_display_dynamic_clk_configure_cmd(struct dsi_display *display,
 	}
 
 	if (clk_rate == display->cached_clk_rate) {
-		DSI_INFO("%s: ignore duplicated DSI clk setting\n", __func__);
+		DSI_DEBUG("%s: ignore duplicated DSI clk setting\n", __func__);
 		return rc;
 	}
 
@@ -4422,7 +4422,7 @@ static int dsi_display_dynamic_clk_configure_cmd(struct dsi_display *display,
 
 	rc = dsi_display_update_dsi_bitrate(display, clk_rate);
 	if (!rc) {
-		DSI_INFO("%s: bit clk is ready to be configured to '%d'\n",
+		DSI_DEBUG("%s: bit clk is ready to be configured to '%d'\n",
 				__func__, clk_rate);
 		atomic_set(&display->clkrate_change_pending, 1);
 	} else {
@@ -5010,7 +5010,7 @@ static int dsi_display_force_update_dsi_clk(struct dsi_display *display)
 	rc = dsi_display_link_clk_force_update_ctrl(display->dsi_clk_handle);
 
 	if (!rc) {
-		DSI_INFO("dsi bit clk has been configured to %d\n",
+		DSI_DEBUG("dsi bit clk has been configured to %d\n",
 			display->cached_clk_rate);
 
 		atomic_set(&display->clkrate_change_pending, 0);
@@ -5241,7 +5241,7 @@ static int dsi_display_bind(struct device *dev,
 		goto error_host_deinit;
 	}
 
-	DSI_INFO("Successfully bind display panel '%s'\n", display->name);
+	DSI_DEBUG("Successfully bind display panel '%s'\n", display->name);
 	display->drm_dev = drm;
 
 	display_for_each_ctrl(i, display) {
@@ -5386,7 +5386,7 @@ static void dsi_display_firmware_display(const struct firmware *fw,
 	struct dsi_display *display = context;
 
 	if (fw) {
-		DSI_INFO("reading data from firmware, size=%zd\n",
+		DSI_DEBUG("reading data from firmware, size=%zd\n",
 			fw->size);
 
 		display->fw = fw;
@@ -5398,7 +5398,7 @@ static void dsi_display_firmware_display(const struct firmware *fw,
 			display->name = "dsi_firmware_display_secondary";
 
 	} else {
-		DSI_INFO("no firmware available, fallback to device node\n");
+		DSI_DEBUG("no firmware available, fallback to device node\n");
 	}
 
 	if (dsi_display_init(display))
@@ -6851,9 +6851,9 @@ int dsi_display_set_mode(struct dsi_display *display,
 		goto error;
 	}
 
-	DSI_INFO("mdp_transfer_time_us=%d us\n",
+	DSI_DEBUG("mdp_transfer_time_us=%d us\n",
 			adj_mode.priv_info->mdp_transfer_time_us);
-	DSI_INFO("hactive= %d,vactive= %d,fps=%d\n",
+	DSI_DEBUG("hactive= %d,vactive= %d,fps=%d\n",
 			timing.h_active, timing.v_active,
 			timing.refresh_rate);
 
