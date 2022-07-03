@@ -973,7 +973,7 @@ static int read_chgcycle_data_from_backup(struct qpnp_bms_chip *chip)
 	if ((temp_u8 == 0xFF) || (temp_u16 == 0xFFFF)) {
 		chip->charge_cycles = 0;
 		chip->charge_increase = 0;
-		pr_info("rejecting aging data charge_increase=%u charge_cycle=%u\n",
+		pr_debug("rejecting aging data charge_increase=%u charge_cycle=%u\n",
 				temp_u8, temp_u16);
 		rc = backup_charge_cycle(chip);
 		if (rc)
@@ -1767,7 +1767,7 @@ static void check_recharge_condition(struct qpnp_bms_chip *chip)
 		if (rc < 0) {
 			pr_err("Unable to set battery property rc=%d\n", rc);
 		} else {
-			pr_info("soc dropped below resume_soc soc=%d resume_soc=%d, restart charging\n",
+			pr_debug("soc dropped below resume_soc soc=%d resume_soc=%d, restart charging\n",
 					chip->last_soc,
 					chip->dt.cfg_soc_resume_limit);
 			chip->eoc_reported = false;
@@ -3288,7 +3288,7 @@ static int calculate_initial_soc(struct qpnp_bms_chip *chip)
 	/* store the start-up OCV for voltage-based-soc */
 	chip->voltage_soc_uv = chip->last_ocv_uv;
 
-	pr_info("warm_reset=%d est_ocv=%d  shutdown_soc_invalid=%d shutdown_ocv=%d shutdown_soc=%d last_soc=%d calculated_soc=%d last_ocv_uv=%d\n",
+	pr_debug("warm_reset=%d est_ocv=%d  shutdown_soc_invalid=%d shutdown_ocv=%d shutdown_soc=%d last_soc=%d calculated_soc=%d last_ocv_uv=%d\n",
 		chip->warm_reset, est_ocv, chip->shutdown_soc_invalid,
 		chip->shutdown_ocv, chip->shutdown_soc, chip->last_soc,
 		chip->calculated_soc, chip->last_ocv_uv);
@@ -3302,7 +3302,7 @@ static int calculate_initial_aging_comp(struct qpnp_bms_chip *chip)
 	bool battery_removed = is_battery_replaced_in_offmode(chip);
 
 	if (battery_removed || chip->shutdown_soc_invalid) {
-		pr_info("Clearing aging data battery_removed=%d shutdown_soc_invalid=%d\n",
+		pr_debug("Clearing aging data battery_removed=%d shutdown_soc_invalid=%d\n",
 				battery_removed, chip->shutdown_soc_invalid);
 		chip->charge_cycles = 0;
 		chip->charge_increase = 0;
@@ -3438,7 +3438,7 @@ static int bms_load_hw_defaults(struct qpnp_bms_chip *chip)
 		return rc;
 	}
 
-	pr_info("BMS_EN=%d Sample_Interval-S1=[%d]S2=[%d]  Sample_Count-S1=[%d]S2=[%d] Fifo_Length-S1=[%d]S2=[%d] FSM_state=%d\n",
+	pr_debug("BMS_EN=%d Sample_Interval-S1=[%d]S2=[%d]  Sample_Count-S1=[%d]S2=[%d] Fifo_Length-S1=[%d]S2=[%d] FSM_state=%d\n",
 				!!bms_en, interval[0], interval[1], count[0],
 				count[1], fifo[0], fifo[1],
 				chip->current_fsm_state);
@@ -3882,7 +3882,7 @@ static int set_battery_data(struct qpnp_bms_chip *chip)
 
 	/* check if ibat_acc_lut is valid */
 	if (!batt_data->ibat_acc_lut->rows) {
-		pr_info("ibat_acc_lut not present\n");
+		pr_debug("ibat_acc_lut not present\n");
 		batt_data->ibat_acc_lut = NULL;
 	}
 
@@ -4245,7 +4245,7 @@ static int qpnp_vm_bms_probe(struct platform_device *pdev)
 	}
 
 	if (chip->dt.cfg_disable_bms) {
-		pr_info("VMBMS disabled (disable-bms = 1)\n");
+		pr_debug("VMBMS disabled (disable-bms = 1)\n");
 		rc = qpnp_masked_write_base(chip, chip->base + EN_CTL_REG,
 							BMS_EN_BIT, 0);
 		if (rc)
@@ -4395,7 +4395,7 @@ static int qpnp_vm_bms_probe(struct platform_device *pdev)
 	}
 
 	schedule_delayed_work(&chip->monitor_soc_work, 0);
-	pr_info("probe success: soc=%d vbatt=%d ocv=%d warm_reset=%d\n",
+	pr_debug("probe success: soc=%d vbatt=%d ocv=%d warm_reset=%d\n",
 					get_prop_bms_capacity(chip), vbatt,
 					chip->last_ocv_uv, chip->warm_reset);
 

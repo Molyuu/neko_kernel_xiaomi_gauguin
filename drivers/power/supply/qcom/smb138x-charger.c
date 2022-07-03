@@ -1899,7 +1899,7 @@ static int smb138x_probe(struct platform_device *pdev)
 
 	device_init_wakeup(chip->chg.dev, true);
 
-	pr_info("SMB138X probed successfully mode=%d\n", chip->chg.mode);
+	pr_debug("SMB138X probed successfully mode=%d\n", chip->chg.mode);
 	return rc;
 
 cleanup:

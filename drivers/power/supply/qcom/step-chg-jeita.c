@@ -765,7 +765,7 @@ static int handle_jeita(struct step_chg_info *chip)
 	if (!chip->usb_icl_votable)
 		goto set_jeita_fv;
 
-	pr_info("%s = %d FCC = %duA FV = %duV\n",
+	pr_debug("%s = %d FCC = %duA FV = %duV\n",
 		chip->jeita_fcc_config->param.prop_name, temp, fcc_ua, fv_uv);
 	handle_fast_charge(chip, temp);
 
@@ -775,7 +775,7 @@ static int handle_jeita(struct step_chg_info *chip)
 	 */
 	rc = power_supply_get_property(chip->batt_psy,
 				POWER_SUPPLY_PROP_VOLTAGE_MAX, &pval);
-	pr_info("%s = %d max voltage= %duv FV = %duV\n",
+	pr_debug("%s = %d max voltage= %duv FV = %duV\n",
 		chip->jeita_fcc_config->param.prop_name, temp, pval.intval, fv_uv);
 	if (rc || (pval.intval == fv_uv)) {
 		fv_uv = 0;

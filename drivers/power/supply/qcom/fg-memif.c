@@ -496,7 +496,7 @@ static int __fg_interleaved_mem_read(struct fg_dev *fg, u16 address,
 
 	if (*fg->debug_mask & FG_SRAM_READ) {
 		fill_string(str, DEBUG_PRINT_BUFFER_SIZE, val, total_len);
-		pr_info("data read: %s\n", str);
+		pr_debug("data read: %s\n", str);
 	}
 
 	return rc;

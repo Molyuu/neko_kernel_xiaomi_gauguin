@@ -182,7 +182,7 @@ static int batterydata_init(void)
 
 	the_battery = battery;
 
-	pr_info("Battery-data device created!\n");
+	pr_debug("Battery-data device created!\n");
 
 	return 0;
 

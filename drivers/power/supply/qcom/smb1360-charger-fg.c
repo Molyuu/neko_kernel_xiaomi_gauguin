@@ -2000,7 +2000,7 @@ static int smb1360_battery_set_property(struct power_supply *psy,
 		break;
 	case POWER_SUPPLY_PROP_CAPACITY:
 		chip->fake_battery_soc = val->intval;
-		pr_info("fake_soc set to %d\n", chip->fake_battery_soc);
+		pr_debug("fake_soc set to %d\n", chip->fake_battery_soc);
 		power_supply_changed(chip->batt_psy);
 		break;
 	case POWER_SUPPLY_PROP_SYSTEM_TEMP_LEVEL:
@@ -3516,7 +3516,7 @@ static int smb1360_check_batt_profile(struct smb1360_chip *chip)
 			BATTERY_PROFILE_B : BATTERY_PROFILE_A;
 	bid_mask = (new_profile == BATTERY_PROFILE_A) ?
 			BATT_PROFILEA_MASK : BATT_PROFILEB_MASK;
-	pr_info("Loaded Profile-RID != connected-RID, switch-profile old_profile=%d new_profile=%d\n",
+	pr_debug("Loaded Profile-RID != connected-RID, switch-profile old_profile=%d new_profile=%d\n",
 				loaded_profile, new_profile);
 
 	/* set the BID mask */
@@ -3559,7 +3559,7 @@ static int smb1360_check_batt_profile(struct smb1360_chip *chip)
 
 		reg = !!(reg & BATTERY_PROFILE_BIT);
 		if (reg == new_profile) {
-			pr_info("New profile=%d loaded\n", new_profile);
+			pr_debug("New profile=%d loaded\n", new_profile);
 			break;
 		}
 		timeout--;
@@ -3711,7 +3711,7 @@ static int smb1360_fg_config(struct smb1360_chip *chip)
 		 */
 		temp = abs(v_predicted - v_now);
 		if (temp >= chip->fg_reset_threshold_mv) {
-			pr_info("Resetting FG - v_delta=%d threshold=%d\n",
+			pr_debug("Resetting FG - v_delta=%d threshold=%d\n",
 					temp, chip->fg_reset_threshold_mv);
 			/* delay for the FG access to settle */
 			msleep(1500);
@@ -5404,7 +5404,7 @@ static void smb1360_shutdown(struct i2c_client *client)
 		rc = smb1360_poweroff(chip);
 		if (rc)
 			pr_err("Couldn't shutdown smb1360, rc = %d\n", rc);
-		pr_info("smb1360 power off\n");
+		pr_debug("smb1360 power off\n");
 	}
 }
 

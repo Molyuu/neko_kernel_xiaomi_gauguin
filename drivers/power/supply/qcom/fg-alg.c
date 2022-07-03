@@ -864,7 +864,7 @@ int soh_profile_update(struct soh_profile *sp, int new_soh)
 		}
 
 		sp->last_batt_age_level = batt_age_level;
-		pr_info("Batt_age_level set to %d for SOH %d\n",
+		pr_debug("Batt_age_level set to %d for SOH %d\n",
 			batt_age_level, new_soh);
 	}
 

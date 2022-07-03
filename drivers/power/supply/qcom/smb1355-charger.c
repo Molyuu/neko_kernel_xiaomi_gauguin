@@ -1640,7 +1640,7 @@ static int smb1355_probe(struct platform_device *pdev)
 	/* keep IRQ's disabled until parallel is enabled */
 	vote(chip->irq_disable_votable, PARALLEL_ENABLE_VOTER, true, 0);
 
-	pr_info("%s probed successfully pl_mode=%s batfet_mode=%s\n",
+	pr_debug("%s probed successfully pl_mode=%s batfet_mode=%s\n",
 		chip->name,
 		IS_USBIN(chip->dt.pl_mode) ? "USBIN-USBIN" : "USBMID-USBMID",
 		(chip->dt.pl_batfet_mode == POWER_SUPPLY_PL_STACKED_BATFET)

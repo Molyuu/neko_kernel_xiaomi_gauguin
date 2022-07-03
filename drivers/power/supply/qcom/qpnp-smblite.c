@@ -1882,7 +1882,7 @@ static int smblite_show_charger_status(struct smblite *chip)
 	}
 	batt_charge_type = val.intval;
 
-	pr_info("SMBLITE: Mode=%s Conn=%s USB Present=%d Battery present=%d health=%d charge=%d\n",
+	pr_debug("SMBLITE: Mode=%s Conn=%s USB Present=%d Battery present=%d health=%d charge=%d\n",
 		chg->ldo_mode ? "LDO" : "SMBC",
 		(chg->connector_type == POWER_SUPPLY_CONNECTOR_TYPEC) ?
 			"TYPEC" : "uUSB", usb_present, batt_present,

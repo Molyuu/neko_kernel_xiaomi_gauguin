@@ -22,7 +22,7 @@
 #include <linux/device.h>
 #include <linux/spinlock.h>
 
-#define ow_info	pr_info
+#define ow_info	pr_debug
 #define ow_dbg	pr_debug
 #define ow_err	pr_debug
 #define ow_log	pr_err

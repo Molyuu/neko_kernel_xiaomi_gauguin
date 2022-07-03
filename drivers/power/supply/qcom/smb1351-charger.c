@@ -2924,7 +2924,7 @@ static int smb1351_main_charger_probe(struct i2c_client *client,
 
 	dump_regs(chip);
 
-	pr_info("smb1351 successfully probed. charger=%d, batt=%d version=%s\n",
+	pr_debug("smb1351 successfully probed. charger=%d, batt=%d version=%s\n",
 			chip->chg_present,
 			smb1351_get_prop_batt_present(chip),
 			smb1351_version_str[chip->version]);
@@ -3011,7 +3011,7 @@ static int smb1351_parallel_charger_probe(struct i2c_client *client,
 
 	create_debugfs_entries(chip);
 
-	pr_info("smb1351 parallel successfully probed.\n");
+	pr_debug("smb1351 parallel successfully probed.\n");
 
 	return 0;
 }

@@ -521,9 +521,9 @@ void dump_sram(struct fg_dev *fg, u8 *buf, int addr, int len)
 		 * 2 bytes.
 		 */
 		if (fg->version == GEN3_FG)
-			pr_info("%03d %s\n", addr + (i / 4), str);
+			pr_debug("%03d %s\n", addr + (i / 4), str);
 		else
-			pr_info("%03d %s\n", addr + (i / 2), str);
+			pr_debug("%03d %s\n", addr + (i / 2), str);
 	}
 }
 
@@ -702,9 +702,9 @@ int fg_read(struct fg_dev *fg, int addr, u8 *val, int len)
 	}
 
 	if (*fg->debug_mask & FG_BUS_READ) {
-		pr_info("length %d addr=%04x\n", len, addr);
+		pr_debug("length %d addr=%04x\n", len, addr);
 		for (i = 0; i < len; i++)
-			pr_info("val[%d]: %02x\n", i, val[i]);
+			pr_debug("val[%d]: %02x\n", i, val[i]);
 	}
 
 	return 0;
@@ -747,9 +747,9 @@ int fg_write(struct fg_dev *fg, int addr, u8 *val, int len)
 	}
 
 	if (*fg->debug_mask & FG_BUS_WRITE) {
-		pr_info("length %d addr=%04x\n", len, addr);
+		pr_debug("length %d addr=%04x\n", len, addr);
 		for (i = 0; i < len; i++)
-			pr_info("val[%d]: %02x\n", i, val[i]);
+			pr_debug("val[%d]: %02x\n", i, val[i]);
 	}
 out:
 	mutex_unlock(&fg->bus_lock);
@@ -799,17 +799,17 @@ int fg_dump_regs(struct fg_dev *fg)
 	if (rc < 0)
 		return rc;
 
-	pr_info("batt_soc_base registers:\n");
+	pr_debug("batt_soc_base registers:\n");
 	for (i = 0; i < sizeof(buf); i++)
-		pr_info("%04x:%02x\n", fg->batt_soc_base + i, buf[i]);
+		pr_debug("%04x:%02x\n", fg->batt_soc_base + i, buf[i]);
 
 	rc = fg_read(fg, fg->mem_if_base, buf, sizeof(buf));
 	if (rc < 0)
 		return rc;
 
-	pr_info("mem_if_base registers:\n");
+	pr_debug("mem_if_base registers:\n");
 	for (i = 0; i < sizeof(buf); i++)
-		pr_info("%04x:%02x\n", fg->mem_if_base + i, buf[i]);
+		pr_debug("%04x:%02x\n", fg->mem_if_base + i, buf[i]);
 
 	return 0;
 }

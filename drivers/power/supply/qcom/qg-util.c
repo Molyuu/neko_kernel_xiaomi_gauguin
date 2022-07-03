@@ -49,9 +49,9 @@ int qg_read(struct qpnp_qg *chip, u32 addr, u8 *val, int len)
 	}
 
 	if (*chip->debug_mask & QG_DEBUG_BUS_READ) {
-		pr_info("length %d addr=%04x\n", len, addr);
+		pr_debug("length %d addr=%04x\n", len, addr);
 		for (i = 0; i < len; i++)
-			pr_info("val[%d]: %02x\n", i, val[i]);
+			pr_debug("val[%d]: %02x\n", i, val[i]);
 	}
 
 	return 0;
@@ -75,9 +75,9 @@ int qg_write(struct qpnp_qg *chip, u32 addr, u8 *val, int len)
 	}
 
 	if (*chip->debug_mask & QG_DEBUG_BUS_WRITE) {
-		pr_info("length %d addr=%04x\n", len, addr);
+		pr_debug("length %d addr=%04x\n", len, addr);
 		for (i = 0; i < len; i++)
-			pr_info("val[%d]: %02x\n", i, val[i]);
+			pr_debug("val[%d]: %02x\n", i, val[i]);
 	}
 out:
 	mutex_unlock(&chip->bus_lock);
@@ -98,7 +98,7 @@ int qg_masked_write(struct qpnp_qg *chip, int addr, u32 mask, u32 val)
 	}
 
 	if (*chip->debug_mask & QG_DEBUG_BUS_WRITE)
-		pr_info("addr=%04x mask: %02x val: %02x\n", addr, mask, val);
+		pr_debug("addr=%04x mask: %02x val: %02x\n", addr, mask, val);
 
 out:
 	mutex_unlock(&chip->bus_lock);

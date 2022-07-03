@@ -614,7 +614,7 @@ static int hl6111r_probe(struct i2c_client *i2c, const struct i2c_device_id *id)
 	if (rc < 0)
 		goto cleanup;
 
-	pr_info("probe successful\n");
+	pr_debug("probe successful\n");
 
 	return 0;
 

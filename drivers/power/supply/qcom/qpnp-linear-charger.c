@@ -3572,7 +3572,7 @@ static int qpnp_lbc_main_probe(struct platform_device *pdev)
 	}
 
 	if (chip->cfg_charging_disabled && !get_prop_batt_present(chip))
-		pr_info("Battery absent and charging disabled\n");
+		pr_debug("Battery absent and charging disabled\n");
 
 	/* Configure initial alarm for VDD trim */
 	if ((chip->supported_feature_flag & VDD_TRIM_SUPPORTED) &&
