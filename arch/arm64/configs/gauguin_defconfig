@@ -4,7 +4,7 @@
 #
 
 #
-# Compiler: Neutron clang version 15.0.0 (https://github.com/llvm/llvm-project.git 369ce54bb302f209239b8ebc77ad824add9df089)
+# Compiler: Nexus clang version 15.0.0 (https://github.com/llvm/llvm-project 83fdf0c34e60e61849574d30c39cf7f7324c5271)
 #
 CONFIG_GCC_VERSION=0
 CONFIG_CC_IS_CLANG=y
@@ -5387,6 +5387,8 @@ CONFIG_F2FS_FS_SECURITY=y
 # CONFIG_F2FS_FS_ENCRYPTION is not set
 # CONFIG_F2FS_FAULT_INJECTION is not set
 # CONFIG_F2FS_FS_COMPRESSION is not set
+CONFIG_F2FS_IOSTAT=y
+# CONFIG_F2FS_UNFAIR_RWSEM is not set
 # CONFIG_FS_DAX is not set
 CONFIG_FS_POSIX_ACL=y
 CONFIG_EXPORTFS=y
