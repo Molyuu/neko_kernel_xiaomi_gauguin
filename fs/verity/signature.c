@@ -27,25 +27,22 @@ static int fsverity_require_signatures;
 static struct key *fsverity_keyring;
 
 /**
- * __fsverity_verify_signature() - check a verity file's signature
- * @inode: the file's inode
- * @signature: the file's signature
- * @sig_size: size of @signature. Can be 0 if there is no signature
- * @file_digest: the file's digest
- * @digest_algorithm: the digest algorithm used
+ * fsverity_verify_signature() - check a verity file's signature
+ * @vi: the file's fsverity_info
+ * @signature: the file's built-in signature
+ * @sig_size: size of signature in bytes, or 0 if no signature
  *
- * Takes the file's digest and optional signature and verifies the signature
- * against the digest and the fs-verity keyring if appropriate
+ * If the file includes a signature of its fs-verity file digest, verify it
+ * against the certificates in the fs-verity keyring.
  *
  * Return: 0 on success (signature valid or not required); -errno on failure
  */
-int __fsverity_verify_signature(const struct inode *inode, const u8 *signature,
-				u32 sig_size, const u8 *file_digest,
-				unsigned int digest_algorithm)
+int fsverity_verify_signature(const struct fsverity_info *vi,
+			      const u8 *signature, size_t sig_size)
 {
+	const struct inode *inode = vi->inode;
+	const struct fsverity_hash_alg *hash_alg = vi->tree_params.hash_alg;
 	struct fsverity_formatted_digest *d;
-	struct fsverity_hash_alg *hash_alg = fsverity_get_hash_alg(inode,
-							digest_algorithm);
 	int err;
 
 	if (IS_ERR(hash_alg))
@@ -66,14 +63,14 @@ int __fsverity_verify_signature(const struct inode *inode, const u8 *signature,
 	memcpy(d->magic, "FSVerity", 8);
 	d->digest_algorithm = cpu_to_le16(hash_alg - fsverity_hash_algs);
 	d->digest_size = cpu_to_le16(hash_alg->digest_size);
-	memcpy(d->digest, file_digest, hash_alg->digest_size);
+	memcpy(d->digest, vi->file_digest, hash_alg->digest_size);
 
 	err = verify_pkcs7_signature(d, sizeof(*d) + hash_alg->digest_size,
-				     signature, sig_size,
-				     fsverity_keyring,
+				     signature, sig_size, fsverity_keyring,
 				     VERIFYING_UNSPECIFIED_SIGNATURE,
 				     NULL, NULL);
 	kfree(d);
+
 
 	if (err) {
 		if (err == -ENOKEY)
@@ -90,7 +87,7 @@ int __fsverity_verify_signature(const struct inode *inode, const u8 *signature,
 	}
 
 	pr_debug("Valid signature for file digest %s:%*phN\n",
-		 hash_alg->name, hash_alg->digest_size, file_digest);
+		 hash_alg->name, hash_alg->digest_size, vi->file_digest);
 	return 0;
 }
 EXPORT_SYMBOL_GPL(__fsverity_verify_signature);
