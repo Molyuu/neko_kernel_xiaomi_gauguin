@@ -3688,7 +3688,6 @@
 	
 	thermal_message: thermal-message {
 		board-sensor = "VIRTUAL-SENSOR";
-		ambient-sensor = "ABT-SENSOR";
 	};
 };
 

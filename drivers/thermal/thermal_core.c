@@ -79,8 +79,6 @@ static atomic_t wifi_limit = ATOMIC_INIT(0);
 static char boost_buf[128];
 const char *board_sensor;
 static char board_sensor_temp[128];
-const char *ambient_sensor;
-static char ambient_sensor_temp[128];
 
 /*
  * Governor section: set of functions to handle thermal governors
@@ -1711,11 +1709,6 @@ static int of_parse_thermal_message(void)
 
 	pr_info("%s board sensor: %s\n", __func__, board_sensor);
 
-	if (of_property_read_string(np, "ambient-sensor", &ambient_sensor))
-		return -EINVAL;
-
-	pr_info("%s ambient sensor: %s\n", __func__, ambient_sensor);
-
 	return 0;
 }
 
@@ -1948,37 +1941,6 @@ thermal_cpu_nolimit_temp_store(struct device *dev,
 
 static DEVICE_ATTR(cpu_nolimit_temp, 0664,
 		   thermal_cpu_nolimit_temp_show, thermal_cpu_nolimit_temp_store);
-static ssize_t
-thermal_ambient_sensor_show(struct device *dev,
-		struct device_attribute *attr, char *buf)
-{
-	if (!ambient_sensor)
-		ambient_sensor = "invalid";
-
-	return snprintf(buf, PAGE_SIZE, "%s", ambient_sensor);
-}
-
-static DEVICE_ATTR(ambient_sensor, 0664,
-		thermal_ambient_sensor_show, NULL);
-
-static ssize_t
-thermal_ambient_sensor_temp_show(struct device *dev,
-		struct device_attribute *attr, char *buf)
-{
-	return snprintf(buf, PAGE_SIZE, ambient_sensor_temp);
-}
-
-static ssize_t
-thermal_ambient_sensor_temp_store(struct device *dev,
-		struct device_attribute *attr, const char *buf, size_t len)
-{
-	snprintf(ambient_sensor_temp, sizeof(ambient_sensor_temp), buf);
-
-	return len;
-}
-
-static DEVICE_ATTR(ambient_sensor_temp, 0664,
-		thermal_ambient_sensor_temp_show, thermal_ambient_sensor_temp_store);
 
 static int create_thermal_message_node(void)
 {
@@ -2033,14 +1995,6 @@ static int create_thermal_message_node(void)
 		ret = sysfs_create_file(&thermal_message_dev.kobj, &dev_attr_cpu_nolimit_temp.attr);
 		if (ret < 0)
 			pr_warn("Thermal: create cpu nolimit node failed\n");
-
-		ret = sysfs_create_file(&thermal_message_dev.kobj, &dev_attr_ambient_sensor.attr);
-		if (ret < 0)
-			pr_warn("Thermal: create ambient sensor node failed\n");
-
-		ret = sysfs_create_file(&thermal_message_dev.kobj, &dev_attr_ambient_sensor_temp.attr);
-		if (ret < 0)
-			pr_warn("Thermal: create ambient sensor temp node failed\n");
 	}
 	return ret;
 }
@@ -2053,8 +2007,6 @@ static void destroy_thermal_message_node(void)
 	sysfs_remove_file(&thermal_message_dev.kobj, &dev_attr_temp_state.attr);
 	sysfs_remove_file(&thermal_message_dev.kobj, &dev_attr_boost.attr);
 	sysfs_remove_file(&thermal_message_dev.kobj, &dev_attr_sconfig.attr);
-	sysfs_remove_file(&thermal_message_dev.kobj, &dev_attr_ambient_sensor_temp.attr);
-	sysfs_remove_file(&thermal_message_dev.kobj, &dev_attr_ambient_sensor.attr);
 #ifdef CONFIG_DRM
 	sysfs_remove_file(&thermal_message_dev.kobj, &dev_attr_screen_state.attr);
 #endif
