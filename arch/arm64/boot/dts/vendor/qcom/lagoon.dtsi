@@ -3685,10 +3685,6 @@
 		iommus = <&apps_smmu 0x0442 0x0>;
 		qcom,iommu-dma-addr-pool = <0x40000000 0x20000000>;
 	};
-	
-	thermal_message: thermal-message {
-		board-sensor = "VIRTUAL-SENSOR";
-	};
 };
 
 #include "lagoon-gdsc.dtsi"
