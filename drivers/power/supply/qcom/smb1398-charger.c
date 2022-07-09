@@ -626,7 +626,7 @@ static int smb1398_div2_cp_get_irq_status(
 
 	*status = ilim << 6 | irev << 3 | tsd << 2 | off_vin << 1 | off_win;
 
-	dev_err(chip->dev, "irq_status = 0x%x\n", *status);
+	dev_dbg(chip->dev, "irq_status = 0x%x\n", *status);
 	return rc;
 }
 
@@ -2237,7 +2237,7 @@ static int smb1398_div2_cp_master_probe(struct smb1398_chip *chip)
 
 	rc = smb1398_div2_cp_parse_dt(chip);
 	if (rc < 0) {
-		dev_err(chip->dev, "Couldn't parse devicetree, rc=%d\n", rc);
+		dev_dbg(chip->dev, "Couldn't parse devicetree, rc=%d\n", rc);
 		return rc;
 	}
 
