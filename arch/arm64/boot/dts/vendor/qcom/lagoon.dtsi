@@ -326,7 +326,7 @@
 	};
 
 	chosen {
-		bootargs = "rcupdate.rcu_normal_after_boot=1 quiet noirqdebug nodebugmon nosoftlockup mce=ignore_ce rcu_nocbs=0-7";
+		bootargs = "rcupdate.rcu_normal_after_boot=1 quiet noirqdebug nodebugmon nosoftlockup mce=ignore_ce rcu_nocbs=0-7 earlycon=msm_geni_serial,0x98c000 kpti=off";
 		rng-seed = <0x12345678>;
 	};
 
