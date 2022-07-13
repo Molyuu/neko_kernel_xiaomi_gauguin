@@ -6,8 +6,8 @@
 #include <linux/delay.h>
 #include <linux/module.h>
 #include <linux/moduleparam.h>
-#ifdef CONFIG_AUTO_KPROFILES_MSM_DRM
-#include <linux/msm_drm_notify.h>
+#ifdef CONFIG_AUTO_KPROFILES_MI_DRM
+#include <drm/drm_notifier_mi.h>
 #elif defined(CONFIG_AUTO_KPROFILES_FB)
 #include <linux/fb.h>
 #endif
@@ -115,11 +115,11 @@ EXPORT_SYMBOL(kp_active_mode);
 static inline int kp_notifier_callback(struct notifier_block *self,
 				       unsigned long event, void *data)
 {
-#ifdef CONFIG_AUTO_KPROFILES_MSM_DRM
-	struct msm_drm_notifier *evdata = data;
+#ifdef CONFIG_AUTO_KPROFILES_MI_DRM
+	struct mi_drm_notifier *evdata = data;
 	int *blank;
 
-	if (event != MSM_DRM_EVENT_BLANK)
+	if (event != MI_DRM_EVENT_BLANK)
 		goto out;
 
 	if (!evdata || !evdata->data || evdata->id != MSM_DRM_PRIMARY_DISPLAY)
@@ -127,12 +127,12 @@ static inline int kp_notifier_callback(struct notifier_block *self,
 
 	blank = evdata->data;
 	switch (*blank) {
-	case MSM_DRM_BLANK_POWERDOWN:
+	case MI_DRM_BLANK_POWERDOWN:
 		if (!screen_on)
 			break;
 		screen_on = false;
 		break;
-	case MSM_DRM_BLANK_UNBLANK:
+	case MI_DRM_BLANK_UNBLANK:
 		if (screen_on)
 			break;
 		screen_on = true;
@@ -174,11 +174,11 @@ static int __init kp_init(void)
 {
 	int ret = 0;
 
-#ifdef CONFIG_AUTO_KPROFILES_MSM_DRM
-	ret = msm_drm_register_client(&kp_notifier_block);
+#ifdef CONFIG_AUTO_KPROFILES_MI_DRM
+	ret = mi_drm_register_client(&kp_notifier_block);
 	if (ret) {
-		pr_err("Failed to register msm_drm notifier, err: %d\n", ret);
-		msm_drm_unregister_client(&kp_notifier_block);
+		pr_err("Failed to register mi_drm notifier, err: %d\n", ret);
+		mi_drm_unregister_client(&kp_notifier_block);
 	}
 #elif defined(CONFIG_AUTO_KPROFILES_FB)
 	ret = fb_register_client(&kp_notifier_block);
@@ -195,8 +195,8 @@ static int __init kp_init(void)
 
 static void __exit kp_exit(void)
 {
-#ifdef CONFIG_AUTO_KPROFILES_MSM_DRM
-	msm_drm_unregister_client(&kp_notifier_block);
+#ifdef CONFIG_AUTO_KPROFILES_MI_DRM
+	mi_drm_unregister_client(&kp_notifier_block);
 #elif defined(CONFIG_AUTO_KPROFILES_FB)
 	fb_unregister_client(&kp_notifier_block);
 #endif
