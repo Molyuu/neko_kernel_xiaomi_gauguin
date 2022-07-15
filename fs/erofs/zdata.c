@@ -425,15 +425,14 @@ static void z_erofs_try_to_claim_pcluster(struct z_erofs_collector *clt)
 	clt->mode = COLLECT_PRIMARY;
 }
 
-static int z_erofs_lookup_pcluster(struct z_erofs_decompress_frontend *fe,
-				   struct inode *inode,
-				   struct erofs_map_blocks *map)
+static int z_erofs_lookup_pcluster(struct z_erofs_decompress_frontend *fe)
 {
+	struct erofs_map_blocks *map = &fe->map;
 	struct erofs_workgroup *grp;
 	struct z_erofs_pcluster *pcl;
 	unsigned int length;
 
-	grp = erofs_find_workgroup(inode->i_sb, map->m_pa >> PAGE_SHIFT);
+	grp = erofs_find_workgroup(fe->inode->i_sb, map->m_pa >> PAGE_SHIFT);
 	if (!grp)
 		return -ENOENT;
 
@@ -479,10 +478,10 @@ static int z_erofs_lookup_pcluster(struct z_erofs_decompress_frontend *fe,
 	return 0;
 }
 
-static int z_erofs_register_pcluster(struct z_erofs_decompress_frontend *fe,
-				     struct inode *inode,
-				     struct erofs_map_blocks *map)
+static int z_erofs_register_pcluster(struct z_erofs_decompress_frontend *fe)
 {
+	struct erofs_map_blocks *map = &fe->map;
+	bool ztailpacking = map->m_flags & EROFS_MAP_META;
 	struct z_erofs_pcluster *pcl;
 	int err;
 
@@ -520,7 +519,7 @@ static int z_erofs_register_pcluster(struct z_erofs_decompress_frontend *fe,
 		pcl->tailpacking_size = map->m_plen;
 	} else {
 		pcl->obj.index = map->m_pa >> PAGE_SHIFT;
-		err = erofs_register_workgroup(inode->i_sb, &pcl->obj);
+		err = erofs_register_workgroup(fe->inode->i_sb, &pcl->obj);
 		if (err) {
 			z_erofs_free_pcluster(pcl);
 			return -EAGAIN;
@@ -534,10 +533,9 @@ static int z_erofs_register_pcluster(struct z_erofs_decompress_frontend *fe,
 	return 0;
 }
 
-static int z_erofs_collector_begin(struct z_erofs_collector *clt,
-				   struct inode *inode,
-				   struct erofs_map_blocks *map)
+static int z_erofs_collector_begin(struct z_erofs_decompress_frontend *fe)
 {
+	struct erofs_map_blocks *map = &fe->map;
 	int ret;
 
 	DBG_BUGON(fe->pcl);
@@ -552,10 +550,10 @@ static int z_erofs_collector_begin(struct z_erofs_collector *clt,
 	}
 
 repeat:
-	ret = z_erofs_lookup_pcluster(fe, inode, map);
+	ret = z_erofs_lookup_pcluster(fe);
 	if (ret == -ENOENT) {
 tailpacking:
-		ret = z_erofs_register_pcluster(fe, inode, map);
+		ret = z_erofs_register_pcluster(fe);
 		/* someone registered at the same time, give another try */
 		if (ret == -EAGAIN) {
 			cond_resched();
@@ -677,7 +675,7 @@ repeat:
 	if (!(map->m_flags & EROFS_MAP_MAPPED))
 		goto hitted;
 
-	err = z_erofs_collector_begin(clt, inode, map);
+	err = z_erofs_collector_begin(fe);
 	if (err)
 		goto err_out;
 
@@ -1231,13 +1229,13 @@ static void move_to_bypass_jobqueue(struct z_erofs_pcluster *pcl,
 	qtail[JQ_BYPASS] = &pcl->next;
 }
 
-static void z_erofs_submit_queue(struct super_block *sb,
-				 struct z_erofs_decompress_frontend *f,
-				 struct list_head *pagepool,
+static void z_erofs_submit_queue(struct z_erofs_decompress_frontend *f,
+				 struct page **pagepool,
 				 struct z_erofs_decompressqueue *fgq,
 				 bool *force_fg)
 {
-	struct erofs_sb_info *const sbi = EROFS_SB(sb);
+	struct super_block *sb = f->inode->i_sb;
+	struct address_space *mc = MNGD_MAPPING(EROFS_SB(sb));
 	z_erofs_next_pcluster_t qtail[NR_JOBQUEUES];
 	struct z_erofs_decompressqueue *q[NR_JOBQUEUES];
 	void *bi_private;
@@ -1276,9 +1274,7 @@ static void z_erofs_submit_queue(struct super_block *sb,
 		do {
 			struct page *page;
 
-			page = pickup_page_for_submission(pcl, i++, pagepool,
-							  MNGD_MAPPING(sbi),
-							  GFP_NOFS);
+			page = pickup_page_for_submission(pcl, i++, pagepool,mc);
 			if (!page)
 				continue;
 
@@ -1329,15 +1325,14 @@ submit_bio_retry:
 	z_erofs_decompress_kickoff(q[JQ_SUBMIT], *force_fg, nr_bios);
 }
 
-static void z_erofs_runqueue(struct super_block *sb,
-			     struct z_erofs_decompress_frontend *f,
-			     struct list_head *pagepool, bool force_fg)
+static void z_erofs_runqueue(struct z_erofs_decompress_frontend *f,
+			     struct page **pagepool, bool force_fg)
 {
 	struct z_erofs_decompressqueue io[NR_JOBQUEUES];
 
 	if (f->clt.owned_head == Z_EROFS_PCLUSTER_TAIL)
 		return;
-	z_erofs_submit_queue(sb, f, pagepool, io, &force_fg);
+	z_erofs_submit_queue(f, pagepool, io, &force_fg);
 
 	/* handle bypass queue (no i/o pclusters) immediately */
 	z_erofs_decompress_queue(&io[JQ_BYPASS], pagepool);
@@ -1367,7 +1362,8 @@ static int z_erofs_readpage(struct file *file, struct page *page)
 	(void)z_erofs_collector_end(&f.clt);
 
 	/* if some compressed cluster ready, need submit them anyway */
-	z_erofs_runqueue(inode->i_sb, &f, &pagepool, true);
+	z_erofs_runqueue(&f, &pagepool,
+			 z_erofs_get_sync_decompress_policy(sbi, 0));
 
 	if (err)
 		erofs_err(inode->i_sb, "failed to read, err [%d]", err);
@@ -1436,7 +1432,8 @@ static int z_erofs_readpages(struct file *filp, struct address_space *mapping,
 
 	(void)z_erofs_collector_end(&f.clt);
 
-	z_erofs_runqueue(inode->i_sb, &f, &pagepool, sync);
+	z_erofs_runqueue(&f, &pagepool,
+			 z_erofs_get_sync_decompress_policy(sbi, nr_pages_cp));
 
 	if (f.map.mpage)
 		put_page(f.map.mpage);
