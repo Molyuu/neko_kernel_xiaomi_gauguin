@@ -22,7 +22,7 @@ struct z_erofs_decompress_req {
 
 	/* indicate the algorithm will be used for decompression */
 	unsigned int alg;
-	bool inplace_io, partial_decoding;
+	bool inplace_io, partial_decoding, fillgaps;
 };
 
 /* some special page->private (unsigned long, see below) */
