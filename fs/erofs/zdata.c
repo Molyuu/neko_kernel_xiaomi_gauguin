@@ -786,31 +786,46 @@ static bool z_erofs_page_is_invalidated(struct page *page)
 	return !page->mapping && !z_erofs_is_shortlived_page(page);
 }
 
-static void z_erofs_decompressqueue_endio(struct bio *bio)
+static int z_erofs_parse_out_bvecs(struct z_erofs_pcluster *pcl,
+				   struct page **pages, struct page **pagepool)
 {
-	tagptr1_t t = tagptr_init(tagptr1_t, bio->bi_private);
-	struct z_erofs_decompressqueue *q = tagptr_unfold_ptr(t);
-	blk_status_t err = bio->bi_status;
-	struct bio_vec *bvec;
-	unsigned int i;
+	struct z_erofs_pagevec_ctor ctor;
+	enum z_erofs_page_type page_type;
+	int i, err = 0;
 
-	bio_for_each_segment_all(bvec, bio, i) {
-		struct page *page = bvec->bv_page;
+	z_erofs_pagevec_ctor_init(&ctor, Z_EROFS_NR_INLINE_PAGEVECS,
+				  pcl->pagevec, 0);
+	for (i = 0; i < pcl->vcnt; ++i) {
+		struct page *page = z_erofs_pagevec_dequeue(&ctor, &page_type);
+		unsigned int pagenr;
 
-		DBG_BUGON(PageUptodate(page));
+		/* all pages in pagevec ought to be valid */
+		DBG_BUGON(!page);
 		DBG_BUGON(z_erofs_page_is_invalidated(page));
 
-		if (err)
-			SetPageError(page);
+		if (z_erofs_put_shortlivedpage(pagepool, page))
+			continue;
 
-		if (erofs_page_is_managed(EROFS_SB(q->sb), page)) {
-			if (!err)
-				SetPageUptodate(page);
-			unlock_page(page);
+		if (page_type == Z_EROFS_VLE_PAGE_TYPE_HEAD)
+			pagenr = 0;
+		else
+			pagenr = z_erofs_onlinepage_index(page);
+
+		DBG_BUGON(pagenr >= pcl->nr_pages);
+		/*
+		 * currently EROFS doesn't support multiref(dedup),
+		 * so here erroring out one multiref page.
+		 */
+		if (pages[pagenr]) {
+			DBG_BUGON(1);
+			SetPageError(pages[pagenr]);
+			z_erofs_onlinepage_endio(pages[pagenr]);
+			err = -EFSCORRUPTED;
 		}
+		pages[pagenr] = page;
 	}
-	z_erofs_decompress_kickoff(q, tagptr_unfold_tags(t), -1);
-	bio_put(bio);
+	z_erofs_pagevec_ctor_exit(&ctor, true);
+	return err;
 }
 
 static int z_erofs_decompress_pcluster(struct super_block *sb,
@@ -818,12 +833,11 @@ static int z_erofs_decompress_pcluster(struct super_block *sb,
 				       struct list_head *pagepool)
 {
 	struct erofs_sb_info *const sbi = EROFS_SB(sb);
-	struct z_erofs_pagevec_ctor ctor;
+	unsigned int pclusterpages = z_erofs_pclusterpages(pcl);
 	unsigned int i, inputsize, outputsize, llen, nr_pages;
 	struct page *pages_onstack[Z_EROFS_VMAP_ONSTACK_PAGES];
 	struct page **pages, **compressed_pages, *page;
 
-	enum z_erofs_page_type page_type;
 	bool overlapped, partial;
 	int err;
 
@@ -857,42 +871,7 @@ static int z_erofs_decompress_pcluster(struct super_block *sb,
 	for (i = 0; i < nr_pages; ++i)
 		pages[i] = NULL;
 
-	err = 0;
-	z_erofs_pagevec_ctor_init(&ctor, Z_EROFS_NR_INLINE_PAGEVECS,
-				  pcl->pagevec, 0);
-
-	for (i = 0; i < pcl->vcnt; ++i) {
-		unsigned int pagenr;
-
-		page = z_erofs_pagevec_dequeue(&ctor, &page_type);
-
-		/* all pages in pagevec ought to be valid */
-		DBG_BUGON(!page);
-		DBG_BUGON(z_erofs_page_is_invalidated(page));
-
-		if (z_erofs_put_shortlivedpage(pagepool, page))
-			continue;
-
-		if (page_type == Z_EROFS_VLE_PAGE_TYPE_HEAD)
-			pagenr = 0;
-		else
-			pagenr = z_erofs_onlinepage_index(page);
-
-		DBG_BUGON(pagenr >= nr_pages);
-
-		/*
-		 * currently EROFS doesn't support multiref(dedup),
-		 * so here erroring out one multiref page.
-		 */
-		if (pages[pagenr]) {
-			DBG_BUGON(1);
-			SetPageError(pages[pagenr]);
-			z_erofs_onlinepage_endio(pages[pagenr]);
-			err = -EFSCORRUPTED;
-		}
-		pages[pagenr] = page;
-	}
-	z_erofs_pagevec_ctor_exit(&ctor, true);
+	err = z_erofs_parse_out_bvecs(pcl, pages, pagepool);
 
 	overlapped = false;
 	compressed_pages = pcl->compressed_pages;
