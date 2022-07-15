@@ -28,17 +28,6 @@ static struct z_erofs_pcluster_slab pcluster_pool[] __read_mostly = {
 	_PCLP(Z_EROFS_PCLUSTER_MAX_PAGES)
 };
 
-/* (obsoleted) page type for online pages */
-enum z_erofs_page_type {
-	/* including Z_EROFS_VLE_PAGE_TAIL_EXCLUSIVE */
-	Z_EROFS_PAGE_TYPE_EXCLUSIVE,
-
-	Z_EROFS_VLE_PAGE_TYPE_TAIL_SHARED,
-
-	Z_EROFS_VLE_PAGE_TYPE_HEAD,
-	Z_EROFS_VLE_PAGE_TYPE_MAX
-};
-
 struct z_erofs_bvec_iter {
 	struct page *bvpage;
 	struct z_erofs_bvset *bvset;
@@ -449,7 +438,6 @@ int erofs_try_to_free_cached_page(struct page *page)
 	return ret;
 }
 
-/* page_type must be Z_EROFS_PAGE_TYPE_EXCLUSIVE */
 static bool z_erofs_try_inplace_io(struct z_erofs_decompress_frontend *fe,
 				   struct z_erofs_bvec *bvec)
 {
@@ -467,13 +455,11 @@ static bool z_erofs_try_inplace_io(struct z_erofs_decompress_frontend *fe,
 
 /* callers must be with pcluster lock held */
 static int z_erofs_attach_page(struct z_erofs_decompress_frontend *fe,
-			       struct z_erofs_bvec *bvec,
-			       enum z_erofs_page_type type)
+			       struct z_erofs_bvec *bvec, bool exclusive)
 {
 	int ret;
 
-	if (fe->mode >= COLLECT_PRIMARY &&
-	    type == Z_EROFS_PAGE_TYPE_EXCLUSIVE) {
+	if (fe->mode >= COLLECT_PRIMARY && exclusive) {
 		/* give priority for inplaceio to use file pages first */
 		if (z_erofs_try_inplace_io(fe, bvec))
 			return 0;
@@ -736,10 +722,9 @@ static int z_erofs_do_read_page(struct z_erofs_decompress_frontend *fe,
 	struct erofs_map_blocks *const map = &fe->map;
 	struct z_erofs_collector *const clt = &fe->clt;
 	const loff_t offset = page_offset(page);
-	bool tight = true;
+	bool tight = true, exclusive;
 
 	enum z_erofs_cache_alloctype cache_strategy;
-	enum z_erofs_page_type page_type;
 	unsigned int cur, end, spiltted, index;
 	int err = 0;
 
@@ -817,12 +802,7 @@ hitted:
 		goto next_part;
 	}
 
-	/* let's derive page type */
-	page_type = cur ? Z_EROFS_VLE_PAGE_TYPE_HEAD :
-		(!spiltted ? Z_EROFS_PAGE_TYPE_EXCLUSIVE :
-			(tight ? Z_EROFS_PAGE_TYPE_EXCLUSIVE :
-				Z_EROFS_VLE_PAGE_TYPE_TAIL_SHARED));
-
+	exclusive = (!cur && (!spiltted || tight));
 	if (cur)
 		tight &= (clt->mode >= COLLECT_PRIMARY_FOLLOWED);
 
@@ -831,7 +811,7 @@ retry:
 					.page = page,
 					.offset = offset - map->m_la,
 					.end = end,
-				  }), page_type);
+				  }), exclusive);
 	/* should allocate an additional short-lived page for bvset */
 	if (err == -EAGAIN && !fe->candidate_bvpage) {
 		fe->candidate_bvpage = alloc_page(GFP_NOFS | __GFP_NOFAIL);
