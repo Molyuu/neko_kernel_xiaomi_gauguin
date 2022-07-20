@@ -337,22 +337,32 @@ static int erofs_raw_access_readpages(struct file *filp,
 
 static sector_t erofs_bmap(struct address_space *mapping, sector_t block)
 {
-	struct inode *inode = mapping->host;
-	struct erofs_map_blocks map = {
-		.m_la = blknr_to_addr(block),
-	};
+	return iomap_bmap(mapping, block, &erofs_iomap_ops);
+}
 
-	if (EROFS_I(inode)->datalayout == EROFS_INODE_FLAT_INLINE) {
-		erofs_blk_t blks = i_size_read(inode) >> LOG_BLOCK_SIZE;
+static ssize_t erofs_file_read_iter(struct kiocb *iocb, struct iov_iter *to)
+{
+	struct inode *inode = file_inode(iocb->ki_filp);
 
-		if (block >> LOG_SECTORS_PER_BLOCK >= blks)
-			return 0;
+	/* no need taking (shared) inode lock since it's a ro filesystem */
+	if (!iov_iter_count(to))
+		return 0;
+
+	if (iocb->ki_flags & IOCB_DIRECT) {
+		struct block_device *bdev = inode->i_sb->s_bdev;
+		unsigned int blksize_mask;
+
+		if (bdev)
+			blksize_mask = (1 << ilog2(bdev_logical_block_size(bdev))) - 1;
+		else
+			blksize_mask = (1 << inode->i_blkbits) - 1;
+
+		if ((iocb->ki_pos | iov_iter_count(to) | iov_iter_alignment(to)) & blksize_mask)
+			return -EINVAL;
+
+		return iomap_dio_rw(iocb, to, &erofs_iomap_ops, NULL);
 	}
-
-	if (!erofs_map_blocks_flatmode(inode, &map, EROFS_GET_BLOCKS_RAW))
-		return erofs_blknr(map.m_pa);
-
-	return 0;
+	return generic_file_read_iter(iocb, to);
 }
 
 /* for uncompressed (aligned) files and raw access for other files */
