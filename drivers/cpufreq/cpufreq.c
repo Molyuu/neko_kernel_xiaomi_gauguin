@@ -709,7 +709,6 @@ static ssize_t show_scaling_cur_freq(struct cpufreq_policy *policy, char *buf)
 	return ret;
 }
 
-extern int kp_active_mode(void);
 static int cpufreq_set_policy(struct cpufreq_policy *policy,
 				struct cpufreq_policy *new_policy);
 
@@ -723,7 +722,7 @@ static ssize_t store_##file_name					\
 	int ret, temp;							\
 	struct cpufreq_policy new_policy;				\
 									\
-	if (kp_active_mode() == 1)					\
+	if (&policy->object == &policy->min)				\
 		return count;						\
 									\
 	memcpy(&new_policy, policy, sizeof(*policy));			\
