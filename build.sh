@@ -10,7 +10,7 @@ set -e
 ##----------------------------------------------------------##
 # Basic Information
 KERNEL_DIR="$(pwd)"
-VERSION=R1
+VERSION=B1
 MODEL=Xiaomi
 DEVICE=Gauguin
 DEFCONFIG=gauguin_defconfig
