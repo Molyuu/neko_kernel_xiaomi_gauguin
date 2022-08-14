@@ -1502,6 +1502,7 @@ static void z_erofs_runqueue(struct z_erofs_decompress_frontend *f,
  * approximate readmore strategies as a start.
  */
 static void z_erofs_pcluster_readmore(struct z_erofs_decompress_frontend *f,
+				      struct readahead_control *rac,
 				      erofs_off_t end,
 				      struct page **pagepool,
 				      bool backmost)
@@ -1518,6 +1519,14 @@ static void z_erofs_pcluster_readmore(struct z_erofs_decompress_frontend *f,
 		if (err)
 			return;
 
+		/* expend ra for the trailing edge if readahead */
+		if (rac) {
+			loff_t newstart = readahead_pos(rac);
+
+			cur = round_up(map->m_la + map->m_llen, PAGE_SIZE);
+			readahead_expand(rac, newstart, cur - newstart);
+			return;
+		}
 		end = round_up(end, PAGE_SIZE);
 	} else {
 		end = round_up(map->m_la, PAGE_SIZE);
@@ -1558,13 +1567,12 @@ static int z_erofs_readpage(struct file *file, struct page *page)
 	int err;
 	LIST_HEAD(pagepool);
 
-	trace_erofs_readpage(page, false);
 	f.headoffset = (erofs_off_t)page->index << PAGE_SHIFT;
 
-	z_erofs_pcluster_readmore(&f, f.headoffset + PAGE_SIZE - 1,
+	z_erofs_pcluster_readmore(&f, NULL, f.headoffset + PAGE_SIZE - 1,
 				  &pagepool, true);
 	err = z_erofs_do_read_page(&f, page, &pagepool);
-	z_erofs_pcluster_readmore(&f, 0, &pagepool, false);
+	z_erofs_pcluster_readmore(&f, NULL, 0, &pagepool, false);
 
 	(void)z_erofs_collector_end(&f);
 
@@ -1580,41 +1588,22 @@ static int z_erofs_readpage(struct file *file, struct page *page)
 	return err;
 }
 
-static int z_erofs_readpages(struct file *filp, struct address_space *mapping,
-			     struct list_head *pages, unsigned int nr_pages)
+static void z_erofs_readahead(struct readahead_control *rac)
 {
-	struct inode *const inode = mapping->host;
+	struct inode *const inode = rac->mapping->host;
 	struct erofs_sb_info *const sbi = EROFS_I_SB(inode);
-
-	bool sync = (nr_pages <= sbi->max_sync_decompress_pages);
 	struct z_erofs_decompress_frontend f = DECOMPRESS_FRONTEND_INIT(inode);
-	gfp_t gfp = mapping_gfp_constraint(mapping, GFP_KERNEL);
-	struct page *head = NULL;
-	LIST_HEAD(pagepool);
+	struct page *pagepool = NULL, *head = NULL, *page;
+	unsigned int nr_pages;
 
-	trace_erofs_readpages(mapping->host, lru_to_page(pages),
-			      nr_pages, false);
+	f.readahead = true;
+	f.headoffset = readahead_pos(rac);
 
-	f.headoffset = (erofs_off_t)lru_to_page(pages)->index << PAGE_SHIFT;
+	z_erofs_pcluster_readmore(&f, rac, f.headoffset +
+				  readahead_length(rac) - 1, &pagepool, true);
+	nr_pages = readahead_count(rac);
 
-	for (; nr_pages; --nr_pages) {
-		struct page *page = lru_to_page(pages);
-
-		prefetchw(&page->flags);
-		list_del(&page->lru);
-
-		/*
-		 * A pure asynchronous readahead is indicated if
-		 * a PG_readahead marked page is hitted at first.
-		 * Let's also do asynchronous decompression for this case.
-		 */
-		sync &= !(PageReadahead(page) && !head);
-
-		if (add_to_page_cache_lru(page, mapping, page->index, gfp)) {
-			list_add(&page->lru, &pagepool);
-			continue;
-		}
-
+	while ((page = readahead_page(rac))) {
 		set_page_private(page, (unsigned long)head);
 		head = page;
 	}
@@ -1633,21 +1622,16 @@ static int z_erofs_readpages(struct file *filp, struct address_space *mapping,
 				  page->index, EROFS_I(inode)->nid);
 		put_page(page);
 	}
-
-	(void)z_erofs_collector_end(&f.clt);
+	z_erofs_pcluster_readmore(&f, rac, 0, &pagepool, false);
+	(void)z_erofs_collector_end(&f);
 
 	z_erofs_runqueue(&f, &pagepool,
-			 z_erofs_get_sync_decompress_policy(sbi, nr_pages_cp));
-
-	if (f.map.mpage)
-		put_page(f.map.mpage);
-
-	/* clean up the remaining free pages */
-	put_pages_list(&pagepool);
-	return 0;
+			 z_erofs_get_sync_decompress_policy(sbi, nr_pages));
+	erofs_put_metabuf(&f.map.buf);
+	erofs_release_pages(&pagepool);
 }
 
 const struct address_space_operations z_erofs_aops = {
 	.readpage = z_erofs_readpage,
-	.readpages = z_erofs_readpages,
+	.readahead = z_erofs_readahead,
 };
