@@ -175,16 +175,10 @@ static inline int xattr_iter_fixup(struct xattr_iter *it)
 	xattr_iter_end(it, true);
 
 	it->blkaddr += erofs_blknr(it->ofs);
-
-	it->page = erofs_get_meta_page(it->sb, it->blkaddr);
-	if (IS_ERR(it->page)) {
-		int err = PTR_ERR(it->page);
-
-		it->page = NULL;
-		return err;
-	}
-
-	it->kaddr = kmap_atomic(it->page);
+	it->kaddr = erofs_read_metabuf(&it->buf, it->sb, it->blkaddr,
+				       EROFS_KMAP);
+	if (IS_ERR(it->kaddr))
+		return PTR_ERR(it->kaddr);
 	it->ofs = erofs_blkoff(it->ofs);
 	return 0;
 }
@@ -207,11 +201,10 @@ static int inline_xattr_iter_begin(struct xattr_iter *it,
 	it->blkaddr = erofs_blknr(iloc(sbi, vi->nid) + inline_xattr_ofs);
 	it->ofs = erofs_blkoff(iloc(sbi, vi->nid) + inline_xattr_ofs);
 
-	it->page = erofs_get_meta_page(inode->i_sb, it->blkaddr);
-	if (IS_ERR(it->page))
-		return PTR_ERR(it->page);
-
-	it->kaddr = kmap_atomic(it->page);
+	it->kaddr = erofs_read_metabuf(&it->buf, inode->i_sb, it->blkaddr,
+				       EROFS_KMAP);
+	if (IS_ERR(it->kaddr))
+		return PTR_ERR(it->kaddr);
 	return vi->xattr_isize - xattr_header_sz;
 }
 
@@ -404,18 +397,11 @@ static int shared_getxattr(struct inode *inode, struct getxattr_iter *it)
 			xattrblock_addr(sbi, vi->xattr_shared_xattrs[i]);
 
 		it->it.ofs = xattrblock_offset(sbi, vi->xattr_shared_xattrs[i]);
-
-		if (!i || blkaddr != it->it.blkaddr) {
-			if (i)
-				xattr_iter_end(&it->it, true);
-
-			it->it.page = erofs_get_meta_page(sb, blkaddr);
-			if (IS_ERR(it->it.page))
-				return PTR_ERR(it->it.page);
-
-			it->it.kaddr = kmap_atomic(it->it.page);
-			it->it.blkaddr = blkaddr;
-		}
+		it->it.kaddr = erofs_read_metabuf(&it->it.buf, sb, blkaddr,
+						  EROFS_KMAP);
+		if (IS_ERR(it->it.kaddr))
+			return PTR_ERR(it->it.kaddr);
+		it->it.blkaddr = blkaddr;
 
 		ret = xattr_foreach(&it->it, &find_xattr_handlers, NULL);
 		if (ret != -ENOATTR)
@@ -625,17 +611,11 @@ static int shared_listxattr(struct listxattr_iter *it)
 			xattrblock_addr(sbi, vi->xattr_shared_xattrs[i]);
 
 		it->it.ofs = xattrblock_offset(sbi, vi->xattr_shared_xattrs[i]);
-		if (!i || blkaddr != it->it.blkaddr) {
-			if (i)
-				xattr_iter_end(&it->it, true);
-
-			it->it.page = erofs_get_meta_page(sb, blkaddr);
-			if (IS_ERR(it->it.page))
-				return PTR_ERR(it->it.page);
-
-			it->it.kaddr = kmap_atomic(it->it.page);
-			it->it.blkaddr = blkaddr;
-		}
+		it->it.kaddr = erofs_read_metabuf(&it->it.buf, sb, blkaddr,
+						  EROFS_KMAP);
+		if (IS_ERR(it->it.kaddr))
+			return PTR_ERR(it->it.kaddr);
+		it->it.blkaddr = blkaddr;
 
 		ret = xattr_foreach(&it->it, &list_xattr_handlers, NULL);
 		if (ret)

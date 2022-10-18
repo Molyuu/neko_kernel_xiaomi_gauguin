@@ -10,25 +10,19 @@
 
 static void erofs_readendio(struct bio *bio)
 {
-	int i;
-	struct bio_vec *bvec;
-	const blk_status_t err = bio->bi_status;
+	if (buf->kmap_type == EROFS_KMAP)
+		kunmap_local(buf->base);
+	buf->base = NULL;
+	buf->kmap_type = EROFS_NO_KMAP;
+}
 
-	bio_for_each_segment_all(bvec, bio, i) {
-		struct page *page = bvec->bv_page;
-
-		/* page is already locked */
-		DBG_BUGON(PageUptodate(page));
-
-		if (err)
-			SetPageError(page);
-		else
-			SetPageUptodate(page);
-
-		unlock_page(page);
-		/* page could be reclaimed now */
-	}
-	bio_put(bio);
+void erofs_put_metabuf(struct erofs_buf *buf)
+{
+	if (!buf->page)
+		return;
+	erofs_unmap_metabuf(buf);
+	put_page(buf->page);
+	buf->page = NULL;
 }
 
 struct page *erofs_get_meta_page(struct super_block *sb, erofs_blk_t blkaddr)
@@ -36,12 +30,32 @@ struct page *erofs_get_meta_page(struct super_block *sb, erofs_blk_t blkaddr)
 	struct address_space *const mapping = sb->s_bdev->bd_inode->i_mapping;
 	struct page *page;
 
-	page = read_cache_page_gfp(mapping, blkaddr,
-				   mapping_gfp_constraint(mapping, ~__GFP_FS));
-	/* should already be PageUptodate */
-	if (!IS_ERR(page))
-		lock_page(page);
-	return page;
+	if (!page || page->index != index) {
+		erofs_put_metabuf(buf);
+		page = read_cache_page_gfp(mapping, index,
+				mapping_gfp_constraint(mapping, ~__GFP_FS));
+		if (IS_ERR(page))
+			return page;
+		/* should already be PageUptodate, no need to lock page */
+		buf->page = page;
+	}
+	if (buf->kmap_type == EROFS_NO_KMAP) {
+		if (type == EROFS_KMAP)
+			buf->base = kmap_local_page(page);
+		buf->kmap_type = type;
+	} else if (buf->kmap_type != type) {
+		DBG_BUGON(1);
+		return ERR_PTR(-EFAULT);
+	}
+	if (type == EROFS_NO_KMAP)
+		return NULL;
+	return buf->base + (offset & ~PAGE_MASK);
+}
+
+void *erofs_read_metabuf(struct erofs_buf *buf, struct super_block *sb,
+			 erofs_blk_t blkaddr, enum erofs_kmap_type type)
+{
+	return erofs_bread(buf, sb->s_bdev->bd_inode, blkaddr, type);
 }
 
 static int erofs_map_blocks_flatmode(struct inode *inode,
