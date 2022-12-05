@@ -499,6 +499,12 @@ static int z_erofs_register_pcluster(struct z_erofs_decompress_frontend *fe)
 	struct erofs_workgroup *grp;
 	int err;
 
+	if (!(map->m_flags & EROFS_MAP_ENCODED) ||
+	    (!ztailpacking && !(map->m_pa >> PAGE_SHIFT))) {
+		DBG_BUGON(1);
+		return -EFSCORRUPTED;
+	}
+
 	/* no available pcluster, let's allocate one */
 	pcl = z_erofs_alloc_pcluster(map->m_plen >> PAGE_SHIFT);
 	if (IS_ERR(pcl))
