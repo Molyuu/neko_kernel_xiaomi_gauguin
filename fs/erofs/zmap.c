@@ -614,7 +614,7 @@ int z_erofs_map_blocks_iter(struct inode *inode, struct erofs_map_blocks *map,
 		map->m_pa = blknr_to_addr(m.pblk);
 		err = z_erofs_get_extent_compressedlen(&m, initial_lcn);
 		if (err)
-			goto out;
+			goto unmap_out;
 	}
 
 	if (m.headtype == Z_EROFS_VLE_CLUSTER_TYPE_PLAIN) {
@@ -636,15 +636,12 @@ int z_erofs_map_blocks_iter(struct inode *inode, struct erofs_map_blocks *map,
 		if (!err)
 			map->m_flags |= EROFS_MAP_FULL_MAPPED;
 	}
-unmap_out:
-	if (m.kaddr)
-		kunmap_atomic(m.kaddr);
 
-out:
+unmap_out:
+	erofs_unmap_metabuf(&m.map->buf);
 	erofs_dbg("%s, m_la %llu m_pa %llu m_llen %llu m_plen %llu m_flags 0%o",
 		  __func__, map->m_la, map->m_pa, map->m_llen, map->m_plen,
 		  map->m_flags);
-
 	return err;
 }
 
