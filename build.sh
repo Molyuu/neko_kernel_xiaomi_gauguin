@@ -12,13 +12,13 @@
 #  Add clang to your PATH before using this script.
 #
 
-LOCAL_VERSION_NUMBER=Driftwood-v1
+LOCAL_VERSION_NUMBER=Neko-v0.1
 
 ARCH=arm64;
 CC=clang;
-CLANG_TRIPLE=aarch64-linux-gnu-;
-CROSS_COMPILE=aarch64-linux-gnu-;
-CROSS_COMPILE_COMPAT=arm-linux-gnueabi-;
+CLANG_TRIPLE=/mnt/pssd/proton-clang/bin/aarch64-linux-gnu-;
+CROSS_COMPILE=/mnt/pssd/gcc-arm64/bin/aarch64-none-linux-gnu-;
+CROSS_COMPILE_COMPAT=/mnt/pssd/gcc-arm32/bin/arm-none-linux-gnueabihf-;
 THREAD=$(nproc --all);
 CC_ADDITION_FLAGS="OBJDUMP=llvm-objdump";
 OUT="../out";
@@ -30,13 +30,13 @@ TARGET_KERNEL_NAME=Kernel;
 TARGET_KERNEL_MOD_VERSION=$(make kernelversion)-$LOCAL_VERSION_NUMBER;
 
 DEFCONFIG_PATH=arch/arm64/configs
-DEFCONFIG_NAME=vendor/picasso_user_defconfig;
+DEFCONFIG_NAME=vendor/gauguin_user_defconfig;
 
 START_SEC=$(date +%s);
 CURRENT_TIME=$(date '+%Z-%Y-%m-%d-%H%M');
 
-ANYKERNEL_URL=https://codeload.github.com/EndCredits/AnyKernel3/zip/refs/heads/picasso;
-ANYKERNEL_PATH=AnyKernel3-picasso;
+ANYKERNEL_URL=https://codeload.github.com/Molyuu/AnyKernel3/zip/refs/heads/main;
+ANYKERNEL_PATH=AnyKernel3-main;
 ANYKERNEL_FILE=anykernel.zip;
 
 link_all_dtb_files(){
