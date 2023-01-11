@@ -71,6 +71,8 @@
 	of_flat_dt_is_compatible(of_get_flat_dt_root(), "qcom,khajep")
 #define early_machine_is_khajeq()	\
 	of_flat_dt_is_compatible(of_get_flat_dt_root(), "qcom,khajeq")
+#define early_machine_is_khajeg()       \
+	of_flat_dt_is_compatible(of_get_flat_dt_root(), "qcom,khajeg")
 #define early_machine_is_lagoon()	\
 	of_flat_dt_is_compatible(of_get_flat_dt_root(), "qcom,lagoon")
 #define early_machine_is_scuba()	\
@@ -137,6 +139,7 @@
 #define early_machine_is_khaje()	0
 #define early_machine_is_khajep()	0
 #define early_machine_is_khajeq()	0
+#define early_machine_is_khajeg()	0
 #define early_machine_is_lagoon()	0
 #define early_machine_is_scuba()	0
 #define early_machine_is_scubaiot()	0
@@ -189,6 +192,7 @@ enum msm_cpu {
 	MSM_CPU_KHAJE,
 	MSM_CPU_KHAJEP,
 	MSM_CPU_KHAJEQ,
+	MSM_CPU_KHAJEG,
 	MSM_CPU_LAGOON,
 	MSM_CPU_SCUBA,
 	MSM_CPU_SCUBAIOT,
@@ -257,6 +261,30 @@ uint32_t get_hw_version_minor(void);
 uint32_t get_hw_version_build(void);
 const char *product_name_get(void);
 
+enum defective_part_type {
+	PART_UNKNOWN      = 0,
+	PART_GPU          = 1,
+	PART_VIDEO        = 2,
+	PART_CAMERA       = 3,
+	PART_DISPLAY      = 4,
+	PART_AUDIO        = 5,
+	PART_MODEM        = 6,
+	PART_WLAN         = 7,
+	PART_COMP         = 8,
+	PART_SENSORS      = 9,
+	PART_NPU          = 10,
+	PART_SPSS         = 11,
+	PART_NAV          = 12,
+	PART_COMP1        = 13,
+	PART_DISPLAY1     = 14,
+	NUM_PARTS_MAX,
+};
+
+enum defective_cluster_type {
+	CLUSTER_CPUSS      = 0,
+	NUM_CLUSTERS_MAX,
+};
+
 enum msm_cpu socinfo_get_msm_cpu(void);
 uint32_t socinfo_get_id(void);
 uint32_t socinfo_get_version(void);
@@ -267,6 +295,8 @@ uint32_t socinfo_get_platform_type(void);
 uint32_t socinfo_get_platform_subtype(void);
 uint32_t socinfo_get_platform_version(void);
 uint32_t socinfo_get_serial_number(void);
+uint32_t socinfo_get_cluster_info(enum defective_cluster_type cluster);
+bool socinfo_get_part_info(enum defective_part_type part);
 enum pmic_model socinfo_get_pmic_model(void);
 uint32_t socinfo_get_pmic_die_revision(void);
 int __init socinfo_init(void) __must_check;
