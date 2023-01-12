@@ -55,7 +55,8 @@ build_kernel(){
     echo "------------------------------";
     echo " Building Kernel ...........";
     echo "------------------------------";
-
+    
+    rm -rf $OUT/AnyKernel3-main;
     make CC=$CC ARCH=$ARCH CROSS_COMPILE=$CROSS_COMPILE CROSS_COMPILE_COMPAT=$CROSS_COMPILE_COMPAT CLANG_TRIPLE=$CLANG_TRIPLE $CC_ADDITION_FLAGS O=$OUT -j$THREAD;
     END_SEC=$(date +%s);
     COST_SEC=$[ $END_SEC-$START_SEC ];
