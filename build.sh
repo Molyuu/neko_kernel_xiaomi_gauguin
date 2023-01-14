@@ -19,7 +19,7 @@ CC=clang;
 CLANG_TRIPLE=../proton-clang/bin/aarch64-linux-gnu-;
 CROSS_COMPILE=../gcc-arm64/bin/aarch64-none-linux-gnu-;
 CROSS_COMPILE_COMPAT=../gcc-arm32/bin/arm-none-linux-gnueabihf-;
-THREAD=$(nproc --all);
+THREAD=12;
 CC_ADDITION_FLAGS="OBJDUMP=llvm-objdump";
 OUT="../out";
 
