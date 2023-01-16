@@ -2452,7 +2452,7 @@ static int qg_psy_get_property(struct power_supply *psy,
 	case POWER_SUPPLY_PROP_BATT_FULL_CURRENT:
 		rc = qg_get_battery_temp(chip, &pval->intval);
 		/* if battery temp below 0C need config 300ma vabtt full current*/
-		pr_err("get battery temp = %d\n", pval->intval);
+		pr_debug("get battery temp = %d\n", pval->intval);
 		if (pval->intval < 0)
 			pval->intval = 300000;
 		else
