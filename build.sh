@@ -16,9 +16,9 @@ LOCAL_VERSION_NUMBER=Neko-v0.1
 
 ARCH=arm64;
 CC=clang;
-CLANG_TRIPLE=../clang-prelude/bin/aarch64-linux-gnu-;
-CROSS_COMPILE=../gcc-arm64/bin/aarch64-none-linux-gnu-;
-CROSS_COMPILE_COMPAT=../gcc-arm32/bin/arm-none-linux-gnueabihf-;
+CLANG_TRIPLE=aarch64-linux-gnu-;
+CROSS_COMPILE=aarch64-linux-gnu-;
+CROSS_COMPILE_COMPAT=arm-none-eabi-;
 THREAD=$(nproc --all);
 CC_ADDITION_FLAGS="OBJDUMP=llvm-objdump";
 OUT="../out";
