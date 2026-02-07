@@ -18,9 +18,10 @@ jobs:
 
       - name: 下载llvm
         run: |
+          mkdir llvm12 && cd llvm12
           wget -q https://android.googlesource.com/platform//prebuilts/clang/host/linux-x86/+archive/b669748458572622ed716407611633c5415da25c/clang-r416183b.tar.gz
           tar -zxf clang-r416183b.tar.gz
-          mv clang-r416183b.tar.gz llvm12
+          mv cd ..
           
       - name: 添加KernelSU Next
         run: |
